@@ -24,5 +24,8 @@ contracts/typechain-types/
 # 0G local cache
 .og-cache/
 
+# Runtime artifacts (head logs, AXL logs, 0G KV mirror, events.jsonl)
+logs/
+
 # Local AI agent context (not for the public repo)
 CLAUDE.md
