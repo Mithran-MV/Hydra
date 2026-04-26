@@ -1,6 +1,10 @@
 {
   "PrivateKeyPath": "keys/h4.pem",
-  "Peers": ["tls://127.0.0.1:9001"],
-  "Listen": ["tls://127.0.0.1:9031"],
+  "Peers": [
+    "tls://127.0.0.1:9001"
+  ],
+  "Listen": [
+    "tls://127.0.0.1:9031"
+  ],
   "api_port": 9032
 }

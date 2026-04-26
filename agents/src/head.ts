@@ -84,17 +84,22 @@ async function main() {
   // Subprocesses
   startHeartbeat({ identity, axl, mesh, state: initialState });
 
+  const resurrection = bindResurrectionHandler({
+    identity,
+    axl,
+    mesh,
+    state: initialState,
+  });
+
   const consensus = startConsensus(
     { identity, axl, mesh, state: initialState },
     {
       onConfirmedDeath: async (target, cause) => {
-        // Leader: write scar + broadcast + trigger resurrection (Day 2 Block B)
         await onLeadershipResurrection(target, cause);
       },
     },
   );
 
-  bindResurrectionHandler({ identity, axl, mesh, state: initialState });
   startDiagnostics({ identity, axl, mesh, state: initialState });
 
   setInterval(() => {
@@ -131,8 +136,12 @@ async function main() {
       await persistGlobalScar(scar);
       await broadcastScar(identity, axl, mesh, scar);
     }
-    // 2. Resurrection (Day 2 Block B wires this)
-    log.info(`leader: would resurrect ${target.slice(0, 10)}… (Block B)`);
+    // 2. Spawn 2 children + broadcast resurrect message
+    try {
+      await resurrection.resurrect(target, cause);
+    } catch (err) {
+      log.err(`resurrection failed: ${(err as Error).message}`);
+    }
   }
 
   initialState.status = "healthy";
