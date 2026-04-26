@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
     og: {
       url: process.env.OG_CHAIN_RPC ?? "https://evmrpc-testnet.0g.ai",
       accounts: process.env.OG_CHAIN_PK ? [process.env.OG_CHAIN_PK] : [],
-      chainId: Number(process.env.OG_CHAIN_CHAIN_ID ?? 16601),
+      chainId: Number(process.env.OG_CHAIN_CHAIN_ID ?? 16602),
     },
   },
 };
