@@ -55,7 +55,7 @@ async function liveGet(
   return localGet(_streamId, _key);
 }
 
-async function kvSet(
+export async function kvSet(
   streamId: Uint8Array,
   key: string,
   value: unknown,
@@ -64,12 +64,35 @@ async function kvSet(
   return localSet(streamId, key, value);
 }
 
-async function kvGet(
+export async function kvGet(
   streamId: Uint8Array,
   key: string,
 ): Promise<unknown | null> {
   if (MODE === "live") return liveGet(streamId, key);
   return localGet(streamId, key);
+}
+
+export async function kvList(
+  streamId: Uint8Array,
+): Promise<Array<{ key: string; value: unknown }>> {
+  if (MODE === "live") {
+    log.warn("kvList live mode pending Day 2 SDK wire-up");
+  }
+  const { readdir } = await import("node:fs/promises");
+  const sid = Buffer.from(streamId).toString("hex").slice(0, 16);
+  try {
+    const files = await readdir(LOCAL_DIR);
+    const matching = files.filter((f) => f.startsWith(`${sid}__`));
+    const out: Array<{ key: string; value: unknown }> = [];
+    for (const fname of matching) {
+      const key = decodeURIComponent(fname.slice(sid.length + 2).replace(/\.json$/, ""));
+      const raw = await readFile(join(LOCAL_DIR, fname), "utf8");
+      out.push({ key, value: JSON.parse(raw) });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 export async function writeStateSnapshot(state: HeadState): Promise<void> {
