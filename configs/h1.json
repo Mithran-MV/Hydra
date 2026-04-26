@@ -1,0 +1,6 @@
+{
+  "PrivateKeyPath": "keys/h1.pem",
+  "Peers": [],
+  "Listen": ["tls://127.0.0.1:9001"],
+  "api_port": 9002
+}
