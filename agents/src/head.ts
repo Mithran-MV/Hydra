@@ -20,6 +20,12 @@ import {
 } from "./memory/og-kv";
 import { appendLog } from "./memory/og-log";
 import { runStrategy } from "./execution/strategies/index";
+import {
+  recordDeathOnChain,
+  recordBornOnChain,
+  recordScarOnChain,
+} from "./execution/chain";
+import { notifyRedistribute } from "./execution/keeperhub";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
 import type {
@@ -28,6 +34,7 @@ import type {
   DeathCause,
   HeadId,
   HeadState,
+  Scar,
   StrategyKind,
 } from "../../shared/types";
 import { STATE_SNAPSHOT_INTERVAL_MS } from "../../shared/constants";
@@ -130,18 +137,60 @@ async function main() {
     cause: DeathCause,
   ): Promise<void> {
     // 1. Build + persist + broadcast scar
+    let newScar: Scar | null = null;
     if (!scarRegistry.has(cause)) {
-      const scar = buildScar(cause, target, initialState.generation + 1);
-      scarRegistry.add(scar);
-      await persistGlobalScar(scar);
-      await broadcastScar(identity, axl, mesh, scar);
+      newScar = buildScar(cause, target, initialState.generation + 1);
+      scarRegistry.add(newScar);
+      await persistGlobalScar(newScar);
+      await broadcastScar(identity, axl, mesh, newScar);
     }
-    // 2. Spawn 2 children + broadcast resurrect message
+    // 2. Spawn 2 children + broadcast resurrect message (in-memory work)
+    let result: { childIds: HeadId[]; childIndices: number[] } | null = null;
     try {
-      await resurrection.resurrect(target, cause);
+      result = await resurrection.resurrect(target, cause);
     } catch (err) {
       log.err(`resurrection failed: ${(err as Error).message}`);
     }
+    // 3. Fire KeeperHub webhook in parallel (independent of chain tx)
+    if (result) {
+      void notifyRedistribute({
+        deadHead: target,
+        cause,
+        childHeads: result.childIds,
+        childIndices: result.childIndices,
+        ts: Date.now(),
+        authorityPeerId: identity.id,
+      });
+    }
+    // 4. Record on chain SERIALLY to avoid nonce collisions on the same wallet.
+    //    Fire-and-forget the whole chain; failures are logged, not raised.
+    void (async () => {
+      try {
+        await recordDeathOnChain(target, cause);
+      } catch (err) {
+        log.warn(`chain death record failed: ${(err as Error).message}`);
+      }
+      if (newScar) {
+        try {
+          await recordScarOnChain(cause, newScar.rule.mitigation);
+        } catch (err) {
+          log.warn(`chain scar record failed: ${(err as Error).message}`);
+        }
+      }
+      if (result) {
+        for (const childId of result.childIds) {
+          try {
+            await recordBornOnChain(
+              childId,
+              target,
+              initialState.generation + 1,
+            );
+          } catch (err) {
+            log.warn(`chain born record failed: ${(err as Error).message}`);
+          }
+        }
+      }
+    })();
   }
 
   initialState.status = "healthy";
