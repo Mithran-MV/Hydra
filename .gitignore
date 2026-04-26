@@ -1,0 +1,28 @@
+node_modules/
+.next/
+dist/
+out/
+build/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# AXL
+axl/bin/
+*.pem
+keys/
+.axl-state/
+
+# Contracts
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+
+# 0G local cache
+.og-cache/
+
+# Local AI agent context (not for the public repo)
+CLAUDE.md
