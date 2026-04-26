@@ -60,10 +60,24 @@ export type AXLMessage =
       from: HeadId;
       leader: HeadId;
       target: HeadId;
+      childIds: HeadId[];
       round: number;
     }
-  | { type: "born"; from: HeadId; parent: HeadId; scar: Scar | null }
-  | { type: "scar"; from: HeadId; scar: Scar };
+  | { type: "born"; from: HeadId; parent: HeadId; gen: number; scar: Scar | null }
+  | { type: "scar"; from: HeadId; scar: Scar }
+  | { type: "panic"; from: HeadId; reason: string; ts: number };
+
+export interface AxlEnvelope {
+  fromPeerId: string;
+  body: AXLMessage;
+}
+
+export interface EventLogEntry {
+  ts: number;
+  headId: HeadId;
+  type: string;
+  payload: unknown;
+}
 
 export interface SwarmSnapshot {
   generation: number;
