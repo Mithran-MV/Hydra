@@ -1,0 +1,18 @@
+{
+  "name": "hydra-swarm",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Anti-fragile agent swarm — kill a head, two grow back with a learned defense.",
+  "workspaces": ["agents", "web", "contracts"],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=web",
+    "dev:agents": "npm run dev --workspace=agents",
+    "bootstrap": "npm run bootstrap --workspace=agents",
+    "contracts:deploy": "npm run deploy --workspace=contracts",
+    "reset": "./demo/reset.sh",
+    "demo": "./demo/full-demo.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
