@@ -1,0 +1,421 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap");
+
+:root {
+  --color-bg: #05060a;
+  --color-fg: #e8ecf1;
+  --color-venom: #37ff9e;
+  --color-blood: #ff2d55;
+  --color-ember: #ffb347;
+  --vignette-strength: 0.6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: rgba(55, 255, 158, 0.35);
+  color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #05060a;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#37ff9e, #00cc63);
+  border-radius: 6px;
+  border: 2px solid #05060a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(#ff2d55, #a10d28);
+}
+
+/* Utility classes */
+.font-display {
+  font-family: "Cinzel", "Trajan Pro", serif;
+  letter-spacing: 0.08em;
+}
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.text-gradient-venom {
+  background: linear-gradient(
+    120deg,
+    #37ff9e 0%,
+    #b4ffdd 40%,
+    #ffffff 55%,
+    #37ff9e 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-blood {
+  background: linear-gradient(
+    120deg,
+    #ff2d55 0%,
+    #ffb347 55%,
+    #ff2d55 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-shadow-mythic {
+  text-shadow:
+    0 0 12px rgba(55, 255, 158, 0.35),
+    0 0 50px rgba(55, 255, 158, 0.25),
+    0 2px 0 rgba(0, 0, 0, 0.7);
+}
+
+.text-outline {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.25);
+  color: transparent;
+}
+
+/* Grid ink background */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(55, 255, 158, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 255, 158, 0.06) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 1) 20%,
+    rgba(0, 0, 0, 0) 80%
+  );
+}
+
+.bg-grid-tight {
+  background-image:
+    linear-gradient(rgba(55, 255, 158, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 255, 158, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+}
+
+.film-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+.glow-venom {
+  box-shadow:
+    0 0 0 1px rgba(55, 255, 158, 0.35),
+    0 0 30px rgba(55, 255, 158, 0.25),
+    inset 0 0 30px rgba(55, 255, 158, 0.1);
+}
+.glow-blood {
+  box-shadow:
+    0 0 0 1px rgba(255, 45, 85, 0.45),
+    0 0 30px rgba(255, 45, 85, 0.3),
+    inset 0 0 30px rgba(255, 45, 85, 0.1);
+}
+
+/* Marquee */
+.marquee {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+  gap: 2rem;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+}
+.marquee-track {
+  display: flex;
+  gap: 2rem;
+  min-width: 200%;
+  animation: marquee 30s linear infinite;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Flicker */
+@keyframes flicker {
+  0%,
+  18%,
+  22%,
+  25%,
+  53%,
+  57%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.6;
+  }
+}
+.flicker {
+  animation: flicker 5s infinite;
+}
+
+/* Appear */
+@keyframes glitchIn {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  60% {
+    clip-path: inset(0 0 0 0);
+    transform: translateX(2px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.glitch-in {
+  animation: glitchIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cinematic letterbox */
+.letterbox-top,
+.letterbox-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: #000;
+  z-index: 60;
+  pointer-events: none;
+  transition: height 0.8s cubic-bezier(0.8, 0, 0.2, 1);
+}
+.letterbox-top {
+  top: 0;
+}
+.letterbox-bottom {
+  bottom: 0;
+}
+
+.magnetic-target {
+  transition: transform 0.15s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
+
+/* Button */
+.mythic-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.75rem;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #05060a;
+  background: linear-gradient(180deg, #c8ffdf 0%, #37ff9e 55%, #00a75a 100%);
+  border-radius: 0.25rem;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow:
+    0 0 0 1px rgba(55, 255, 158, 0.5),
+    0 18px 50px -15px rgba(55, 255, 158, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.mythic-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 70%
+  );
+  mix-blend-mode: overlay;
+  transform: translateX(-100%);
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mythic-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(55, 255, 158, 0.7),
+    0 22px 60px -10px rgba(55, 255, 158, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.mythic-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.mythic-btn-ghost {
+  padding: 0.9rem 1.75rem;
+  font-family: "Cinzel", serif;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #e8ecf1;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.25rem;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+.mythic-btn-ghost:hover {
+  border-color: rgba(55, 255, 158, 0.6);
+  color: #37ff9e;
+  background: rgba(55, 255, 158, 0.05);
+}
+
+/* Rune border */
+.rune-border {
+  position: relative;
+}
+.rune-border::before,
+.rune-border::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(55, 255, 158, 0.5);
+}
+.rune-border::before {
+  top: -4px;
+  left: -4px;
+  border-right: none;
+  border-bottom: none;
+}
+.rune-border::after {
+  bottom: -4px;
+  right: -4px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Section labels */
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(55, 255, 158, 0.75);
+}
+.section-label::before {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(55, 255, 158, 0.7)
+  );
+}
+
+/* GSAP-controlled reveals */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+.reveal-right {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* Canvas wrapper */
+.canvas-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.canvas-wrap canvas {
+  display: block;
+}
+
+/* Mask helpers */
+.mask-fade-b {
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+.mask-fade-t {
+  mask-image: linear-gradient(to top, black 40%, transparent 100%);
+}
