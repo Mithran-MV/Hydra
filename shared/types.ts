@@ -79,6 +79,24 @@ export interface EventLogEntry {
   payload: unknown;
 }
 
+export interface InferenceTrace {
+  decision: string;
+  verified: boolean;
+  provider: string;
+  model: string;
+  ms: number;
+  ts: number;
+  by: HeadId;
+}
+
+export interface KeeperHubRun {
+  status: number;
+  runId: string | null;
+  cause: string;
+  ts: number;
+  ok: boolean;
+}
+
 export interface SwarmSnapshot {
   generation: number;
   heads: HeadState[];
@@ -86,4 +104,6 @@ export interface SwarmSnapshot {
   attacksSurvived: number;
   aum: string;
   lastEventAt: number;
+  inference: InferenceTrace | null;
+  keeperhub: KeeperHubRun | null;
 }
