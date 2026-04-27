@@ -1,24 +1,34 @@
 import { request } from "undici";
-import type { DeathCause, HeadId } from "../../../shared/types";
+import type { DeathCause, HeadId, Scar } from "../../../shared/types";
 import { emitEvent } from "../events";
 import { log } from "../util/log";
 
 /**
- * KeeperHub integration: in the hybrid architecture (0G doesn't appear in KH's
- * native chain list, see planning/06-feedback-md-draft.md), the KH MCP-managed
- * workflow does NOT call the 0G contract directly. Instead:
+ * KeeperHub integration. HYDRA wires three distinct KH workflow types,
+ * one per trigger style, so the platform's full surface gets exercised:
  *
- *   1. Agent (leader) POSTs a webhook trigger to KH on confirmed-death.
- *   2. KH workflow runs: simulate (read), Discord audit, optional Slack/email.
- *   3. Agent (in parallel) makes the actual on-chain call via execution/chain.ts
- *      to 0G's HydraExecutor / HydraTreasury.
+ *   1. Webhook trigger      — leader fires on confirmed-death.        (notifyRedistribute)
+ *   2. Scheduled trigger    — KH polls each minute and fires back if   (notifyHeartbeatStale)
+ *                             a head's heartbeat is stale, giving us
+ *                             KH-as-watchdog independent of our mesh.
+ *   3. Event trigger        — every new scar fires this, for live      (notifyScarLearned)
+ *                             external audit (Discord/Slack).
  *
- * This satisfies all three KH judging criteria — webhook trigger, depth, audit
- * trail — while keeping execution on 0G Chain for the 0G prize.
+ * Each workflow has its own webhook URL. Set the URLs via env vars:
+ *   KEEPERHUB_REDISTRIBUTE_WEBHOOK   (workflow 1)
+ *   KEEPERHUB_HEARTBEAT_WEBHOOK      (workflow 2 — agent-side trigger of scheduled flow)
+ *   KEEPERHUB_SCAR_WEBHOOK           (workflow 3)
+ *
+ * Auth: KH workflow trigger endpoints expect Bearer <KEEPERHUB_KEY>. See
+ * KEEPERHUB_FEEDBACK.md for the API-key-format gap we documented.
+ *
+ * Architectural note: 0G chain id 16602 isn't in KH's native chain list, so
+ * the on-chain writes (HydraRegistry events, HydraScars mints) happen in
+ * the agent itself via viem. KH's role here is the audit + watchdog layer
+ * sitting above whatever chain the agent decides to use.
  */
 
 const KH_BASE = process.env.KEEPERHUB_BASE ?? "https://app.keeperhub.com";
-const REDISTRIBUTE_WEBHOOK = process.env.KEEPERHUB_REDISTRIBUTE_WEBHOOK;
 
 export interface RedistributePayload {
   deadHead: HeadId;
@@ -26,19 +36,40 @@ export interface RedistributePayload {
   childHeads: HeadId[];
   childIndices: number[];
   ts: number;
-  authorityPeerId: HeadId; // leader's peer-id
+  authorityPeerId: HeadId;
 }
 
-export async function notifyRedistribute(
-  payload: RedistributePayload,
-): Promise<{ ok: boolean; status?: number; runId?: string }> {
-  if (!REDISTRIBUTE_WEBHOOK) {
-    log.warn(
-      "KEEPERHUB_REDISTRIBUTE_WEBHOOK not set — skipping KH webhook (workflow not yet wired)",
-    );
-    await emitEvent(payload.authorityPeerId, "keeperhub.skip", {
+export interface HeartbeatStalePayload {
+  peerId: HeadId;
+  headIndex: number;
+  lastHeartbeatAt: number;
+  staleByMs: number;
+  ts: number;
+}
+
+export interface ScarLearnedPayload {
+  cause: DeathCause;
+  rule: Scar["rule"];
+  learnedFrom: HeadId;
+  generation: number;
+  ts: number;
+}
+
+interface PostResult {
+  ok: boolean;
+  status?: number;
+  runId?: string;
+}
+
+async function postToWorkflow(
+  url: string | undefined,
+  payload: object,
+  context: { name: string; authorityPeerId: HeadId },
+): Promise<PostResult> {
+  if (!url) {
+    log.debug(`${context.name}: webhook url not set, skipping`);
+    await emitEvent(context.authorityPeerId, `keeperhub.${context.name}.skip`, {
       reason: "no webhook url",
-      ...payload,
     });
     return { ok: false };
   }
@@ -46,14 +77,13 @@ export async function notifyRedistribute(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  // KH workflow trigger endpoints require Bearer auth
   const apiKey = process.env.KEEPERHUB_KEY;
   if (apiKey && apiKey !== "..." && apiKey.trim().length > 0) {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
   try {
-    const r = await request(REDISTRIBUTE_WEBHOOK, {
+    const r = await request(url, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
@@ -68,18 +98,55 @@ export async function notifyRedistribute(
       await r.body.text().catch(() => "");
     }
     log.info(
-      `🔔 KH webhook fired: status=${r.statusCode}${runId ? ` runId=${runId}` : ""}`,
+      `🔔 KH ${context.name}: status=${r.statusCode}${runId ? ` runId=${runId}` : ""}`,
     );
-    await emitEvent(payload.authorityPeerId, "keeperhub.notify", {
+    await emitEvent(context.authorityPeerId, `keeperhub.notify`, {
+      workflow: context.name,
       status: r.statusCode,
       runId,
       ...payload,
     });
     return { ok: r.statusCode < 400, status: r.statusCode, runId };
   } catch (err) {
-    log.warn(`KH webhook error: ${(err as Error).message}`);
+    log.warn(`KH ${context.name} error: ${(err as Error).message}`);
     return { ok: false };
   }
+}
+
+/** Workflow 1 — webhook-triggered, fires on confirmed death. */
+export async function notifyRedistribute(
+  payload: RedistributePayload,
+): Promise<PostResult> {
+  return postToWorkflow(
+    process.env.KEEPERHUB_REDISTRIBUTE_WEBHOOK,
+    payload,
+    { name: "redistribute", authorityPeerId: payload.authorityPeerId },
+  );
+}
+
+/** Workflow 2 — agent posts when its own watchdog detects stale heartbeat
+ *  in another head, so KH's run history shows the lag too (defense in depth). */
+export async function notifyHeartbeatStale(
+  payload: HeartbeatStalePayload,
+  by: HeadId,
+): Promise<PostResult> {
+  return postToWorkflow(
+    process.env.KEEPERHUB_HEARTBEAT_WEBHOOK,
+    payload,
+    { name: "heartbeat-stale", authorityPeerId: by },
+  );
+}
+
+/** Workflow 3 — fires on every new scar so KH audits the swarm's learning. */
+export async function notifyScarLearned(
+  payload: ScarLearnedPayload,
+  by: HeadId,
+): Promise<PostResult> {
+  return postToWorkflow(
+    process.env.KEEPERHUB_SCAR_WEBHOOK,
+    payload,
+    { name: "scar-learned", authorityPeerId: by },
+  );
 }
 
 export function keeperhubBaseUrl(): string {
