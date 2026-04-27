@@ -118,8 +118,8 @@ hydra/
 ├── shared/             AXLMessage union, HeadState, Scar, SwarmSnapshot types
 ├── configs/            AXL Go-node configs (one per head, distinct ports)
 ├── demo/               full-demo.sh, kill.sh, reset.sh
-├── FEEDBACK.md         KeeperHub Builder Feedback bounty submission
-└── README.md           you are here
+├── KEEPERHUB_FEEDBACK.md  KeeperHub Builder Feedback bounty submission
+└── README.md              you are here
 ```
 
 ---
@@ -139,7 +139,7 @@ hydra/
 | Requirement | Status | Where |
 |---|---|---|
 | KeeperHub MCP/workflow integration | ✅ | `agents/src/execution/keeperhub.ts`, KH workflow ID `lcyuk85gh46defy5xaq8b` |
-| KeeperHub Builder Feedback (bounty) | ✅ | `FEEDBACK.md` |
+| KeeperHub Builder Feedback (bounty) | ✅ | `KEEPERHUB_FEEDBACK.md` |
 | AXL cross-node communication (separate nodes, not in-process) | ✅ | 3 Go binaries on ports 9001/9011/9021, see `configs/` |
 | 0G Storage (KV + blob upload) | ✅ | `agents/src/memory/og-kv.ts`, `og-storage.ts` |
 | 0G Compute (TEE-verified inference) | ✅ | `agents/src/memory/og-compute.ts` (children call on boot) |
