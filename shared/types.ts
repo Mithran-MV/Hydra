@@ -103,6 +103,10 @@ export interface SwarmSnapshot {
   scars: Scar[];
   attacksSurvived: number;
   aum: string;
+  /** Cumulative wei the swarm has redistributed across deaths instead of losing. */
+  valueProtectedWei: string;
+  /** Cumulative wei deposited into the treasury since boot. */
+  valueDepositedWei: string;
   lastEventAt: number;
   inference: InferenceTrace | null;
   keeperhub: KeeperHubRun | null;
