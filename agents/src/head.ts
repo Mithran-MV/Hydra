@@ -28,7 +28,7 @@ import {
   mintScarINFT,
 } from "./execution/chain";
 import { ask as askOgCompute } from "./memory/og-compute";
-import { notifyRedistribute } from "./execution/keeperhub";
+import { notifyRedistribute, notifyScarLearned } from "./execution/keeperhub";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
 import type {
@@ -174,6 +174,17 @@ async function main() {
       scarRegistry.add(newScar);
       await persistGlobalScar(newScar);
       await broadcastScar(identity, axl, mesh, newScar);
+      // KH workflow #3 — scar-learned audit fires every time the swarm learns
+      void notifyScarLearned(
+        {
+          cause,
+          rule: newScar.rule,
+          learnedFrom: target,
+          generation: newScar.generation,
+          ts: newScar.learnedAt,
+        },
+        identity.id,
+      );
     }
     // 2. Spawn 2 children + broadcast resurrect message (in-memory work)
     let result: { childIds: HeadId[]; childIndices: number[] } | null = null;
