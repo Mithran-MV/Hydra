@@ -66,6 +66,37 @@ const REGISTRY_ABI = [
   },
 ] as const;
 
+const SCARS_ABI = [
+  {
+    type: "function",
+    name: "mintScar",
+    inputs: [
+      { name: "cause", type: "bytes32" },
+      { name: "rule", type: "string" },
+      { name: "to", type: "address" },
+    ],
+    outputs: [{ name: "tokenId", type: "uint256" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "totalSupply",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
+
+const TREASURY_ABI = [
+  {
+    type: "function",
+    name: "balances",
+    inputs: [{ type: "bytes32" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
+
 export interface ChainCtx {
   publicClient: ReturnType<typeof createPublicClient>;
   wallet: ReturnType<typeof createWalletClient>;
@@ -187,6 +218,43 @@ export async function recordScarOnChain(
   });
   log.info(`📜 chain scar recorded: ${cause} → ${hash}`);
   return hash;
+}
+
+export async function mintScarINFT(
+  cause: DeathCause,
+  rule: string,
+  to: HexAddress,
+): Promise<`0x${string}`> {
+  const c = getChain();
+  const hash = await c.wallet.writeContract({
+    address: c.scarsAddress,
+    abi: SCARS_ABI,
+    functionName: "mintScar",
+    args: [causeToBytes32(cause), rule, to],
+    account: c.account,
+    chain: ogGalileo,
+  });
+  log.info(`🎴 iNFT scar minted: ${cause} → ${hash}`);
+  return hash;
+}
+
+export async function getTotalScarsMinted(): Promise<bigint> {
+  const c = getChain();
+  return (await c.publicClient.readContract({
+    address: c.scarsAddress,
+    abi: SCARS_ABI,
+    functionName: "totalSupply",
+  })) as bigint;
+}
+
+export async function getTreasuryBalance(headId: HeadId): Promise<bigint> {
+  const c = getChain();
+  return (await c.publicClient.readContract({
+    address: c.treasuryAddress,
+    abi: TREASURY_ABI,
+    functionName: "balances",
+    args: [peerIdToBytes32(headId)],
+  })) as bigint;
 }
 
 void parseEther; // exported for strategies' future use
