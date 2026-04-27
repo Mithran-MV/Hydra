@@ -164,11 +164,12 @@ export function Hero() {
                 ref={subtitleRef}
                 className="mt-8 max-w-xl text-[1.05rem] md:text-[1.15rem] leading-relaxed text-neutral-300 font-light"
               >
-                Cut off one head.{" "}
-                <span className="text-venom-300 font-medium">Two grow back</span>
-                — inheriting the dead head's memory plus a{" "}
-                <span className="text-blood-500 font-medium">scar</span> against
-                whatever killed it. Every attack makes the swarm stronger.
+                Production execution + learning layer for autonomous agent
+                fleets. Cut off one head,{" "}
+                <span className="text-venom-300 font-medium">two grow back</span>
+                — inheriting the dead head's full memory plus a{" "}
+                <span className="text-blood-500 font-medium">defense rule</span>{" "}
+                against whatever killed it. Every attack hardens the network.
               </p>
 
               <div className="mt-10 flex flex-wrap items-center gap-4">
