@@ -163,8 +163,16 @@ function HeadCard({ head }: { head: HeadState }) {
     dead: "bg-blood-500",
   };
   const dot = colorByStatus[head.status] ?? "bg-neutral-500";
+  const isYoung = head.generation > 0 && Date.now() - head.bornAt < 30_000;
+  const isDying = head.status === "suspected" || head.status === "dead";
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 font-mono text-xs">
+    <div
+      className={[
+        "rounded-xl border border-ink-700 bg-ink-900/50 p-4 font-mono text-xs",
+        isYoung ? "head-spawn" : "",
+        isDying ? "death-pulse" : "",
+      ].filter(Boolean).join(" ")}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${dot} animate-pulse`} />
@@ -198,8 +206,11 @@ function HeadCard({ head }: { head: HeadState }) {
 }
 
 function ScarCard({ scar }: { scar: Scar }) {
+  const isFresh = Date.now() - scar.learnedAt < 30_000;
   return (
-    <div className="min-w-[260px] rounded-lg border border-blood-700/60 bg-blood-800/10 p-3">
+    <div
+      className={`min-w-[260px] rounded-lg border border-blood-700/60 bg-blood-800/10 p-3 ${isFresh ? "scar-reveal" : ""}`}
+    >
       <div className="text-xs text-neutral-500">Gen {scar.generation}</div>
       <div className="font-mono text-sm text-blood-400">{scar.cause}</div>
       <div className="text-xs text-neutral-300 mt-2 leading-relaxed">
