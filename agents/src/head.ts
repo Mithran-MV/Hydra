@@ -25,7 +25,9 @@ import {
   recordDeathOnChain,
   recordBornOnChain,
   recordScarOnChain,
+  mintScarINFT,
 } from "./execution/chain";
+import { ask as askOgCompute } from "./memory/og-compute";
 import { notifyRedistribute } from "./execution/keeperhub";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
@@ -88,6 +90,34 @@ async function main() {
     parent: PARENT_ID,
     inheritedScarCount: scarRegistry.all().length,
   });
+
+  // Children: ask 0G Compute (TEE-verified) for an action signal once on boot.
+  // Best-effort — if the broker has no live providers we just log and continue.
+  if (PARENT_ID && process.env.OG_COMPUTE_LIVE === "1") {
+    void (async () => {
+      try {
+        const recentScars = scarRegistry
+          .all()
+          .map((s) => `${s.cause}: ${s.rule.mitigation}`)
+          .slice(-5)
+          .join("; ");
+        const prompt = `You are a newly-spawned HYDRA agent inheriting from a dead parent. Strategy: ${STRATEGY}. Recent scars: ${recentScars || "none"}. In one sentence: should I act now or wait? Reply with "ACT" or "WAIT" plus a one-line reason.`;
+        const r = await askOgCompute(prompt);
+        await emitEvent(identity.id, "compute.inference", {
+          decision: r.answer.slice(0, 200),
+          verified: r.verified,
+          provider: r.providerAddress.slice(0, 16),
+          model: r.model,
+          ms: r.durationMs,
+        });
+      } catch (err) {
+        log.warn(`0G Compute fallback: ${(err as Error).message}`);
+        await emitEvent(identity.id, "compute.skip", {
+          reason: (err as Error).message,
+        });
+      }
+    })();
+  }
 
   // Subprocesses
   startHeartbeat({ identity, axl, mesh, state: initialState });
@@ -176,6 +206,12 @@ async function main() {
           await recordScarOnChain(cause, newScar.rule.mitigation);
         } catch (err) {
           log.warn(`chain scar record failed: ${(err as Error).message}`);
+        }
+        // Mint iNFT for this scar so it's visible on chainscan as ERC-721 transfer
+        try {
+          await mintScarINFT(cause, newScar.rule.mitigation, identity.wallet);
+        } catch (err) {
+          log.warn(`iNFT mint failed: ${(err as Error).message}`);
         }
       }
       if (result) {
