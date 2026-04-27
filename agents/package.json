@@ -11,11 +11,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@0gfoundation/0g-ts-sdk": "^1.2.6",
+    "@0glabs/0g-serving-broker": "^0.7.5",
     "@noble/curves": "^1.4.0",
     "@noble/hashes": "^1.4.0",
-    "viem": "^2.21.0",
+    "dotenv": "^16.4.0",
     "undici": "^6.0.0",
-    "dotenv": "^16.4.0"
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
