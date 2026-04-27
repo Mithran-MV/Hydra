@@ -95,6 +95,13 @@ const TREASURY_ABI = [
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
   },
+  {
+    type: "function",
+    name: "deposit",
+    inputs: [{ name: "headId", type: "bytes32" }],
+    outputs: [],
+    stateMutability: "payable",
+  },
 ] as const;
 
 export interface ChainCtx {
@@ -255,6 +262,24 @@ export async function getTreasuryBalance(headId: HeadId): Promise<bigint> {
     functionName: "balances",
     args: [peerIdToBytes32(headId)],
   })) as bigint;
+}
+
+export async function depositToTreasury(
+  headId: HeadId,
+  amountWei: bigint,
+): Promise<`0x${string}`> {
+  const c = getChain();
+  const hash = await c.wallet.writeContract({
+    address: c.treasuryAddress,
+    abi: TREASURY_ABI,
+    functionName: "deposit",
+    args: [peerIdToBytes32(headId)],
+    value: amountWei,
+    account: c.account,
+    chain: ogGalileo,
+  });
+  log.info(`💰 deposited ${Number(amountWei) / 1e18} OG to head treasury balance: ${hash}`);
+  return hash;
 }
 
 void parseEther; // exported for strategies' future use
