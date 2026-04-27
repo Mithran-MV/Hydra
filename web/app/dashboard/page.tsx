@@ -3,14 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { mockSnapshot } from "@/lib/mock-swarm";
-import type { SwarmSnapshot } from "@shared/types";
+import type { HeadState, Scar, SwarmSnapshot } from "@shared/types";
+
+const STRATEGY_LABEL: Record<string, string> = {
+  aave_deposit: "Aave deposit",
+  univ4_lp: "UniV4 LP",
+  payroll: "Payroll",
+};
 
 export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<SwarmSnapshot | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
     const attachSSE = () => {
       try {
         const source = new EventSource("/api/events");
@@ -29,12 +34,10 @@ export default function DashboardPage() {
         return null;
       }
     };
-
     const source = attachSSE();
     const fallback = setTimeout(() => {
       if (!cancelled && !snapshot) setSnapshot(mockSnapshot());
     }, 700);
-
     return () => {
       cancelled = true;
       clearTimeout(fallback);
@@ -59,7 +62,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-ink-950 text-ink-50 p-6 grid grid-rows-[auto_auto_1fr_auto] gap-6">
+    <main className="min-h-screen bg-ink-950 text-ink-50 p-6 grid grid-rows-[auto_auto_auto_1fr_auto] gap-6">
       <nav className="flex items-center justify-between">
         <Link
           href="/"
@@ -68,53 +71,55 @@ export default function DashboardPage() {
           ← HYDRA
         </Link>
         <div className="font-mono text-xs text-neutral-500">
-          swarm.live · testnet
+          swarm.live · 0G galileo testnet
         </div>
       </nav>
 
       <header className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
         <Stat label="Generation" value={snapshot.generation.toString()} />
-        <Stat label="Heads" value={snapshot.heads.length.toString()} />
+        <Stat label="Heads alive" value={snapshot.heads.length.toString()} />
         <Stat label="Scars learned" value={snapshot.scars.length.toString()} />
         <Stat
           label="Attacks survived"
           value={snapshot.attacksSurvived.toString()}
         />
-        <Stat label="AUM" value={`$${snapshot.aum}`} />
+        <Stat label="AUM" value={`${shortenWei(snapshot.aum)}`} />
       </header>
 
-      <section className="rounded-xl border border-ink-700 bg-ink-900/50 flex items-center justify-center min-h-[420px] relative overflow-hidden">
+      <section>
+        <SectionHeader>Active heads</SectionHeader>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {snapshot.heads.length === 0 ? (
+            <div className="text-neutral-600 text-sm font-mono col-span-full">
+              No active heads. Boot the swarm: <code>npm run dev:agents</code>
+            </div>
+          ) : (
+            snapshot.heads.map((h) => <HeadCard key={h.id} head={h} />)
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-ink-700 bg-ink-900/50 flex items-center justify-center min-h-[280px] relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-50" />
-        <div className="relative text-neutral-500 font-mono text-sm">
-          [HydraGraph D3 force-directed mesh — wired in Day 10]
+        <div className="relative text-neutral-500 font-mono text-sm text-center">
+          <div>[HydraGraph D3 force-directed mesh — wired in Day 3]</div>
+          <div className="text-xs text-neutral-600 mt-2">
+            {snapshot.heads.length} nodes · gen {snapshot.generation} ·{" "}
+            {snapshot.scars.length} scars
+          </div>
         </div>
       </section>
 
       <footer className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 overflow-x-auto">
-        <div className="text-xs uppercase tracking-widest text-neutral-500 mb-2">
-          Scars learned
-        </div>
+        <SectionHeader inline>Scars learned</SectionHeader>
         {snapshot.scars.length === 0 ? (
-          <div className="text-neutral-600 text-sm">
-            No scars yet. Attack the swarm.
+          <div className="text-neutral-600 text-sm font-mono mt-2">
+            No scars yet. Attack the swarm: <code>./demo/kill.sh 2 --cause key_revoked</code>
           </div>
         ) : (
-          <div className="flex gap-3 pb-1">
+          <div className="flex gap-3 pb-1 mt-3">
             {snapshot.scars.map((scar) => (
-              <div
-                key={scar.id}
-                className="min-w-[240px] rounded-lg border border-blood-700/60 bg-blood-800/10 p-3"
-              >
-                <div className="text-xs text-neutral-500">
-                  Gen {scar.generation}
-                </div>
-                <div className="font-mono text-sm text-blood-500">
-                  {scar.cause}
-                </div>
-                <div className="text-xs text-neutral-400 mt-1">
-                  {scar.rule.mitigation}
-                </div>
-              </div>
+              <ScarCard key={scar.id} scar={scar} />
             ))}
           </div>
         )}
@@ -134,4 +139,83 @@ function Stat({ label, value }: { label: string; value: string }) {
       </div>
     </div>
   );
+}
+
+function HeadCard({ head }: { head: HeadState }) {
+  const colorByStatus: Record<string, string> = {
+    healthy: "bg-venom-400",
+    booting: "bg-neutral-400",
+    suspected: "bg-ember-400",
+    resurrecting: "bg-blue-400",
+    newborn: "bg-purple-400",
+    dead: "bg-blood-500",
+  };
+  const dot = colorByStatus[head.status] ?? "bg-neutral-500";
+  return (
+    <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 font-mono text-xs">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${dot} animate-pulse`} />
+          <span className="text-neutral-400 uppercase tracking-widest">
+            {head.status}
+          </span>
+        </div>
+        <span className="text-neutral-600">gen {head.generation}</span>
+      </div>
+      <div className="text-venom-300 truncate">
+        {head.id.slice(0, 16)}…
+      </div>
+      <div className="text-neutral-500 mt-1">
+        {STRATEGY_LABEL[head.strategy] ?? head.strategy}
+      </div>
+      <div className="text-neutral-600 mt-2 truncate">
+        wallet {head.wallet.slice(0, 10)}…{head.wallet.slice(-4)}
+      </div>
+      {head.parent && (
+        <div className="text-blood-400 mt-1 truncate text-[0.65rem]">
+          ↳ inherited from {head.parent.slice(0, 10)}…
+        </div>
+      )}
+      {head.deathCause && (
+        <div className="text-blood-500 mt-1 text-[0.65rem]">
+          cause: {head.deathCause}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScarCard({ scar }: { scar: Scar }) {
+  return (
+    <div className="min-w-[260px] rounded-lg border border-blood-700/60 bg-blood-800/10 p-3">
+      <div className="text-xs text-neutral-500">Gen {scar.generation}</div>
+      <div className="font-mono text-sm text-blood-400">{scar.cause}</div>
+      <div className="text-xs text-neutral-300 mt-2 leading-relaxed">
+        {scar.rule.mitigation}
+      </div>
+      <div className="text-[0.65rem] text-neutral-600 mt-2">
+        learned from {scar.learnedFrom.slice(0, 10)}…
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({
+  children,
+  inline,
+}: {
+  children: React.ReactNode;
+  inline?: boolean;
+}) {
+  const cls = inline
+    ? "text-xs uppercase tracking-widest text-neutral-500"
+    : "text-xs uppercase tracking-widest text-neutral-500 mb-3";
+  return <div className={cls}>{children}</div>;
+}
+
+function shortenWei(wei: string): string {
+  const n = Number(wei) / 1e18;
+  if (n === 0) return "$0";
+  if (n < 0.001) return `${n.toExponential(2)} OG`;
+  return `${n.toFixed(4)} OG`;
 }
