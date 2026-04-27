@@ -43,10 +43,19 @@ export async function notifyRedistribute(
     return { ok: false };
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  // KH workflow trigger endpoints require Bearer auth
+  const apiKey = process.env.KEEPERHUB_KEY;
+  if (apiKey && apiKey !== "..." && apiKey.trim().length > 0) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
   try {
     const r = await request(REDISTRIBUTE_WEBHOOK, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
       headersTimeout: 10_000,
       bodyTimeout: 10_000,
