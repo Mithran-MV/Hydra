@@ -1,19 +1,25 @@
 # HYDRA
 
-**Anti-fragile agent swarm. Kill a head, two grow back. Every attack makes it stronger.**
+**Production execution + learning layer for autonomous agent fleets. When agents fail, the swarm doesn't just respawn them — it inherits their memory and a learned defense against the failure mode. Every attack hardens the network.**
 
-Submitted to ETH Global Open Agents Hackathon (April 24 – May 6, 2026).
-
-> *"You can't kill what evolves from pain."*
+> Anti-fragile by design: kill a head, two grow back. Each carries the dead head's full state, every defense rule the swarm has ever learned, and one new rule against the cause that just killed its parent.
 
 ---
 
-## The pitch
+## The problem
 
-Every agent system today is fragile. One compromised key, one crashed process, one revoked API — and the positions it manages collapse. HYDRA flips that: each "head" is an autonomous agent with its own ed25519 identity, its own EVM wallet, and its own strategy. When one dies, the surviving heads reach consensus on the cause, the leader spawns two children that inherit the dead head's memory + a fresh defense rule (a "scar") against whatever killed it, and KeeperHub orchestrates the audit trail. Every attack makes the swarm bigger and smarter.
+Today's agent fleets — yield bots, keeper networks, automated treasuries, agentic DeFi — are uniformly fragile. One revoked API key, one process crash, one RPC timeout, one drained EOA, and the position the agent was managing collapses. Worse: the rest of the fleet learns nothing. Every team rebuilds the same incident response from scratch.
 
-**Live demo (record):** [paste YouTube unlisted link before submission]
-**Dashboard:** `npm run dev:web` then http://localhost:3000/dashboard
+HYDRA is the layer underneath those agents. Each head runs the strategy you'd run anyway (Aave deposit, Uniswap LP, scheduled payroll), but it does so as a member of a peer-to-peer swarm with three properties:
+
+1. **Availability bounded by minutes, not days.** When a head dies, the swarm reaches consensus on the cause within ~15s and a leader spawns two replacements within another ~30s. Total downtime per head: <60 seconds.
+2. **Memory inherited across deaths.** Children read the dead head's last `HeadState` snapshot from 0G Storage on boot. Position, balance, strategy, generation — none of it is lost.
+3. **Failures become permanent immune responses.** Every confirmed death writes a defense rule (`scar`) to a global stream and mints it as an iNFT on 0G Chain. Every surviving and future head reads it on boot. The swarm gets *smarter every time it gets attacked*, and the rule is publicly auditable as ERC-721 metadata anyone can inherit.
+
+Agent operators get bounded downtime + cumulative immunity. Treasuries don't get drained — funds live in a constrained `HydraTreasury`, never in head EOAs, with execution gated behind a whitelist of (target, selector) pairs. A compromised head cannot route value anywhere except back to the treasury.
+
+**Demo video:** [paste unlisted YouTube link before submission]
+**Live dashboard:** http://localhost:3000/dashboard (or your VPS deploy)
 **Repository:** https://github.com/Mithran-MV/Hydra
 
 ---
