@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { mockSnapshot } from "@/lib/mock-swarm";
+import { SwarmGraph } from "@/components/dashboard/SwarmGraph";
+import { TEEBadge } from "@/components/dashboard/TEEBadge";
+import { KeeperHubRunCard } from "@/components/dashboard/KeeperHubRunCard";
 import type { HeadState, Scar, SwarmSnapshot } from "@shared/types";
 
 const STRATEGY_LABEL: Record<string, string> = {
@@ -99,14 +102,19 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-ink-700 bg-ink-900/50 flex items-center justify-center min-h-[280px] relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid opacity-50" />
-        <div className="relative text-neutral-500 font-mono text-sm text-center">
-          <div>[HydraGraph D3 force-directed mesh — wired in Day 3]</div>
-          <div className="text-xs text-neutral-600 mt-2">
-            {snapshot.heads.length} nodes · gen {snapshot.generation} ·{" "}
-            {snapshot.scars.length} scars
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+        <div className="rounded-xl border border-ink-700 bg-ink-900/50 relative overflow-hidden min-h-[420px]">
+          <div className="absolute inset-0 bg-grid opacity-30" />
+          <div className="relative w-full h-[420px]">
+            <SwarmGraph
+              heads={snapshot.heads}
+              scarsCount={snapshot.scars.length}
+            />
           </div>
+        </div>
+        <div className="grid grid-rows-2 gap-4">
+          <TEEBadge inference={snapshot.inference} />
+          <KeeperHubRunCard run={snapshot.keeperhub} />
         </div>
       </section>
 

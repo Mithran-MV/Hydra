@@ -83,5 +83,7 @@ export function mockSnapshot(): SwarmSnapshot {
     attacksSurvived: 1,
     aum: "75,480",
     lastEventAt: now,
+    inference: null,
+    keeperhub: null,
   };
 }
