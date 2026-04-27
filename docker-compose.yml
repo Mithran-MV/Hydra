@@ -1,93 +1,39 @@
+# HYDRA — VPS-ready web deploy
+#
+# Usage on your VPS:
+#   1. git clone https://github.com/Mithran-MV/Hydra.git && cd Hydra
+#   2. (optional) rsync the latest agent logs from your dev machine to ./logs
+#   3. docker compose up -d
+#   4. open http://<vps-ip>:3000/dashboard
+#
+# The agents + AXL nodes run on the host (via npm run dev:agents) for the
+# submission demo — they are NOT containerized here. Only the dashboard is
+# deployed via this compose file. The dashboard reads agent state from the
+# mounted ./logs volume.
+
 version: "3.9"
 
-# Each head = one AXL node + one agent process.
-# Separate services satisfy AXL "cross-node communication" qualification.
-
-x-head-common: &head-common
-  build:
-    context: .
-    dockerfile: agents/Dockerfile
-  env_file: .env
-  restart: "no"
-  depends_on:
-    - sse-broker
-
 services:
-  sse-broker:
+  hydra-web:
     build:
-      context: ./web
-      dockerfile: Dockerfile.broker
-    ports:
-      - "4000:4000"
-    environment:
-      - PORT=4000
-
-  axl-1:
-    image: hydra-axl:latest
-    build:
-      context: ./axl
-    ports:
-      - "9002:9002"
-    volumes:
-      - ./keys/head-1.pem:/keys/private.pem:ro
-
-  head-1:
-    <<: *head-common
-    environment:
-      - HEAD_INDEX=1
-      - HEAD_STRATEGY=aave_deposit
-      - AXL_URL=http://axl-1:9002
-      - SSE_BROKER_URL=http://sse-broker:4000
-    depends_on:
-      - axl-1
-      - sse-broker
-
-  axl-2:
-    image: hydra-axl:latest
-    build:
-      context: ./axl
-    ports:
-      - "9003:9002"
-    volumes:
-      - ./keys/head-2.pem:/keys/private.pem:ro
-
-  head-2:
-    <<: *head-common
-    environment:
-      - HEAD_INDEX=2
-      - HEAD_STRATEGY=univ4_lp
-      - AXL_URL=http://axl-2:9002
-      - SSE_BROKER_URL=http://sse-broker:4000
-    depends_on:
-      - axl-2
-      - sse-broker
-
-  axl-3:
-    image: hydra-axl:latest
-    build:
-      context: ./axl
-    ports:
-      - "9004:9002"
-    volumes:
-      - ./keys/head-3.pem:/keys/private.pem:ro
-
-  head-3:
-    <<: *head-common
-    environment:
-      - HEAD_INDEX=3
-      - HEAD_STRATEGY=payroll
-      - AXL_URL=http://axl-3:9002
-      - SSE_BROKER_URL=http://sse-broker:4000
-    depends_on:
-      - axl-3
-      - sse-broker
-
-  web:
-    build:
-      context: ./web
+      context: .
+      dockerfile: Dockerfile.web
+    image: hydra-web:latest
+    container_name: hydra-web
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      - SSE_BROKER_URL=http://sse-broker:4000
-    depends_on:
-      - sse-broker
+      NODE_ENV: production
+      OG_KV_LOCAL_DIR: /app/logs/og-kv
+      EVENTS_PATH: /app/logs/events.jsonl
+    volumes:
+      # Mount agent log directory (read-only) so the SSE route can stream
+      # head state + scars + events.
+      - ./logs:/app/logs:ro
+    networks:
+      - hydra-net
+
+networks:
+  hydra-net:
+    driver: bridge
