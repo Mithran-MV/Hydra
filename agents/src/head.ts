@@ -17,6 +17,7 @@ import {
 import {
   writeStateSnapshot,
   bootstrapFromMemory,
+  readStateSnapshot,
 } from "./memory/og-kv";
 import { appendLog } from "./memory/og-log";
 import { runStrategy } from "./execution/strategies/index";
@@ -197,6 +198,18 @@ async function main() {
   log.info(`healthy · strategy=${STRATEGY}`);
 }
 
+async function writeDeadTombstone(
+  target: HeadId,
+  cause: DeathCause,
+): Promise<void> {
+  const existing = (await readStateSnapshot(target)) as HeadState | null;
+  if (!existing) return;
+  if (existing.status === "dead") return;
+  existing.status = "dead";
+  existing.deathCause = cause;
+  await writeStateSnapshot(existing);
+}
+
 async function dispatch(
   env: AxlEnvelope,
   mesh: Mesh,
@@ -211,6 +224,10 @@ async function dispatch(
         type: "heartbeat.recv",
         payload: { from: msg.from.slice(0, 16), gen: msg.gen },
       });
+      break;
+    case "confirmed":
+      // Mark the dead head's persisted state as dead so dashboards know.
+      await writeDeadTombstone(msg.target, msg.cause);
       break;
     case "scar":
       scars.add(msg.scar);
