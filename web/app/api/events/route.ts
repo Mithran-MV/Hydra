@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { keccak_256 } from "@noble/hashes/sha3";
 import type { HeadState, Scar, SwarmSnapshot } from "@shared/types";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,14 @@ const KV_DIR = process.env.OG_KV_LOCAL_DIR
 const EVENTS_FILE = process.env.EVENTS_PATH
   ? resolve(process.env.EVENTS_PATH)
   : join(REPO_ROOT, "logs", "events.jsonl");
+
+function streamPrefix(label: string): string {
+  return Buffer.from(keccak_256(`hydra-v1:${label}`))
+    .toString("hex")
+    .slice(0, 16);
+}
+
+const SCARS_PREFIX = streamPrefix("scars:global");
 
 async function readHeadStates(): Promise<HeadState[]> {
   if (!existsSync(KV_DIR)) return [];
@@ -31,25 +40,62 @@ async function readHeadStates(): Promise<HeadState[]> {
 }
 
 async function readScars(): Promise<Scar[]> {
-  // Day 2 — read from logs/og-kv with scars stream prefix.
-  return [];
+  if (!existsSync(KV_DIR)) return [];
+  const files = await readdir(KV_DIR);
+  const scarFiles = files.filter(
+    (f) => f.startsWith(`${SCARS_PREFIX}__`) && !f.endsWith("__current.json"),
+  );
+  const scars: Scar[] = [];
+  for (const f of scarFiles) {
+    try {
+      const raw = await readFile(join(KV_DIR, f), "utf8");
+      scars.push(JSON.parse(raw));
+    } catch {
+      // skip
+    }
+  }
+  return scars.sort((a, b) => b.learnedAt - a.learnedAt);
+}
+
+async function countAttacksSurvived(): Promise<number> {
+  if (!existsSync(EVENTS_FILE)) return 0;
+  try {
+    const raw = await readFile(EVENTS_FILE, "utf8");
+    const lines = raw.split("\n").filter(Boolean);
+    let count = 0;
+    for (const line of lines) {
+      try {
+        const e = JSON.parse(line);
+        if (e?.type === "resurrection.complete") count++;
+      } catch {
+        // skip
+      }
+    }
+    return count;
+  } catch {
+    return 0;
+  }
 }
 
 async function buildSnapshot(): Promise<SwarmSnapshot> {
-  const heads = await readHeadStates();
+  const allStates = await readHeadStates();
   const scars = await readScars();
-  const now = Date.now();
-  const generation = Math.max(0, ...heads.map((h) => h.generation));
-  const aum = heads
+  const attacks = await countAttacksSurvived();
+
+  // Live = anything not status==="dead"
+  const liveHeads = allStates.filter((h) => h.status !== "dead");
+  const generation = Math.max(0, ...liveHeads.map((h) => h.generation));
+  const aum = liveHeads
     .reduce((sum, h) => sum + Number(h.balance ?? 0), 0)
     .toString();
+
   return {
     generation,
-    heads,
+    heads: liveHeads,
     scars,
-    attacksSurvived: 0,
+    attacksSurvived: attacks,
     aum,
-    lastEventAt: now,
+    lastEventAt: Date.now(),
   };
 }
 
@@ -57,7 +103,6 @@ export async function GET() {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      let lastEventsSize = 0;
       let closed = false;
 
       const send = (data: object) => {
@@ -69,29 +114,18 @@ export async function GET() {
         }
       };
 
-      // Initial snapshot
       send(await buildSnapshot());
 
       const tick = async () => {
         if (closed) return;
         try {
-          const snapshot = await buildSnapshot();
-          send(snapshot);
-
-          if (existsSync(EVENTS_FILE)) {
-            const stats = await stat(EVENTS_FILE);
-            if (stats.size !== lastEventsSize) {
-              lastEventsSize = stats.size;
-            }
-          }
+          send(await buildSnapshot());
         } catch {
           // tolerate transient FS errors
         }
       };
 
       const interval = setInterval(() => void tick(), 1_000);
-
-      // Cleanup on close
       const cleanup = () => {
         closed = true;
         clearInterval(interval);
@@ -101,8 +135,6 @@ export async function GET() {
           // already closed
         }
       };
-
-      // Auto-close after 10 minutes to avoid runaway connections
       setTimeout(cleanup, 10 * 60 * 1000);
     },
   });
@@ -116,3 +148,6 @@ export async function GET() {
     },
   });
 }
+
+// stat used for change detection in future versions
+void stat;
