@@ -1,0 +1,46 @@
+# HYDRA web (Next.js) — for VPS deploy
+#
+# Build:    docker build -t hydra-web -f Dockerfile.web .
+# Run:      docker run -d -p 3000:3000 \
+#             -v /path/to/agent-logs/og-kv:/app/logs/og-kv:ro \
+#             -v /path/to/agent-logs/events.jsonl:/app/logs/events.jsonl:ro \
+#             hydra-web
+#
+# Or via compose: see docker-compose.web.yml
+
+FROM node:22-alpine AS base
+WORKDIR /app
+
+# Install workspace deps
+FROM base AS deps
+COPY package.json package-lock.json ./
+COPY web/package.json ./web/
+COPY shared/package.json ./shared/
+COPY agents/package.json ./agents/
+COPY contracts/package.json ./contracts/
+RUN npm install --omit=dev --workspaces=false || true
+RUN npm install --workspace=web --workspace=shared --include=dev
+
+# Build the Next.js app
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/web/node_modules ./web/node_modules
+COPY package.json package-lock.json ./
+COPY shared ./shared
+COPY web ./web
+RUN npm run build --workspace=web
+
+# Runtime image — minimal
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/shared ./shared
+COPY --from=build /app/web/.next ./web/.next
+COPY --from=build /app/web/public ./web/public 2>/dev/null || true
+COPY --from=build /app/web/package.json ./web/package.json
+COPY --from=build /app/web/next.config.ts ./web/next.config.ts
+COPY package.json ./
+
+EXPOSE 3000
+CMD ["npm", "run", "start", "--workspace=web"]
