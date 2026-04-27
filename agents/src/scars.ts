@@ -10,6 +10,7 @@ import type { AXLClient } from "./axl/client";
 import type { Mesh } from "./axl/mesh";
 import { streams } from "./memory/streams";
 import { kvSet, kvList } from "./memory/og-kv";
+import { uploadJsonToOG } from "./memory/og-storage";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
 
@@ -30,9 +31,16 @@ export function buildScar(
 }
 
 export async function persistGlobalScar(scar: Scar): Promise<void> {
-  // keyed by cause so newest write per cause wins (idempotent)
+  // 1. Always write to local KV mirror (instant, reliable)
   await kvSet(streams.scarsGlobal(), scar.cause, scar);
   log.info(`scar persisted: ${scar.cause} → ${scar.rule.mitigation}`);
+  // 2. Best-effort upload to live 0G Storage so the scar has a verifiable
+  //    tx hash on chainscan-galileo (proof that memory lives on 0G).
+  if (process.env.OG_STORAGE_LIVE === "1") {
+    void uploadJsonToOG(`scar:${scar.cause}`, scar).catch((err) =>
+      log.warn(`0G Storage upload failed: ${(err as Error).message}`),
+    );
+  }
 }
 
 export async function readGlobalScars(): Promise<Scar[]> {
