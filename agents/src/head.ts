@@ -94,9 +94,16 @@ async function main() {
 
   // Originals deposit a small position to HydraTreasury on boot so the swarm
   // has real on-chain AUM. Children inherit via redistribute on death — they
-  // don't deposit again. Best-effort: skip on faucet shortage / RPC issues.
+  // don't deposit again. Heads share a single deployer wallet so deposits
+  // need to be staggered to avoid nonce collisions. We stagger by HEAD_INDEX
+  // (head-1 deposits at +0s, head-2 at +5s, head-3 at +10s).
   if (!PARENT_ID && process.env.HYDRA_DEPOSIT_ON_BOOT !== "0") {
     void (async () => {
+      const staggerMs = (HEAD_INDEX - 1) * 5_000;
+      if (staggerMs > 0) {
+        log.debug(`waiting ${staggerMs}ms before deposit (avoid nonce collision)`);
+        await new Promise((r) => setTimeout(r, staggerMs));
+      }
       try {
         const amount = BigInt(
           process.env.HYDRA_BOOT_DEPOSIT_WEI ?? "1000000000000000",
