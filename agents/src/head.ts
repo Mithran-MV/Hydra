@@ -26,6 +26,7 @@ import {
   recordBornOnChain,
   recordScarOnChain,
   mintScarINFT,
+  depositToTreasury,
 } from "./execution/chain";
 import { ask as askOgCompute } from "./memory/og-compute";
 import { notifyRedistribute, notifyScarLearned } from "./execution/keeperhub";
@@ -90,6 +91,28 @@ async function main() {
     parent: PARENT_ID,
     inheritedScarCount: scarRegistry.all().length,
   });
+
+  // Originals deposit a small position to HydraTreasury on boot so the swarm
+  // has real on-chain AUM. Children inherit via redistribute on death — they
+  // don't deposit again. Best-effort: skip on faucet shortage / RPC issues.
+  if (!PARENT_ID && process.env.HYDRA_DEPOSIT_ON_BOOT !== "0") {
+    void (async () => {
+      try {
+        const amount = BigInt(
+          process.env.HYDRA_BOOT_DEPOSIT_WEI ?? "1000000000000000",
+        ); // 0.001 OG default
+        const tx = await depositToTreasury(identity.id, amount);
+        initialState.balance = amount.toString();
+        await writeStateSnapshot(initialState);
+        await emitEvent(identity.id, "treasury.deposit", {
+          tx,
+          amount: amount.toString(),
+        });
+      } catch (err) {
+        log.warn(`treasury deposit on boot skipped: ${(err as Error).message}`);
+      }
+    })();
+  }
 
   // Children: ask 0G Compute (TEE-verified) for an action signal once on boot.
   // Best-effort — if the broker has no live providers we just log and continue.
@@ -192,6 +215,21 @@ async function main() {
       result = await resurrection.resurrect(target, cause);
     } catch (err) {
       log.err(`resurrection failed: ${(err as Error).message}`);
+    }
+    // 2a. Emit redistribute event with the dead head's last known balance.
+    //     Value-protected counter on the dashboard sums these — the swarm
+    //     redistributed this much instead of losing it to the dead head's wallet.
+    try {
+      const dead = await readStateSnapshot(target);
+      if (dead && dead.balance && dead.balance !== "0") {
+        await emitEvent(identity.id, "treasury.redistribute", {
+          deadHead: target,
+          amount: dead.balance,
+          childHeads: result?.childIds ?? [],
+        });
+      }
+    } catch {
+      // best-effort
     }
     // 3. Fire KeeperHub webhook in parallel (independent of chain tx)
     if (result) {
