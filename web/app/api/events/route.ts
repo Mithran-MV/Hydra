@@ -2,7 +2,13 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { keccak_256 } from "@noble/hashes/sha3";
-import type { HeadState, Scar, SwarmSnapshot } from "@shared/types";
+import type {
+  HeadState,
+  InferenceTrace,
+  KeeperHubRun,
+  Scar,
+  SwarmSnapshot,
+} from "@shared/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,9 +38,7 @@ async function readHeadStates(): Promise<HeadState[]> {
     try {
       const raw = await readFile(join(KV_DIR, f), "utf8");
       states.push(JSON.parse(raw));
-    } catch {
-      // skip unreadable
-    }
+    } catch {}
   }
   return states;
 }
@@ -50,39 +54,66 @@ async function readScars(): Promise<Scar[]> {
     try {
       const raw = await readFile(join(KV_DIR, f), "utf8");
       scars.push(JSON.parse(raw));
-    } catch {
-      // skip
-    }
+    } catch {}
   }
   return scars.sort((a, b) => b.learnedAt - a.learnedAt);
 }
 
-async function countAttacksSurvived(): Promise<number> {
-  if (!existsSync(EVENTS_FILE)) return 0;
+interface ScannedEvents {
+  attacks: number;
+  inference: InferenceTrace | null;
+  keeperhub: KeeperHubRun | null;
+}
+
+async function scanEvents(): Promise<ScannedEvents> {
+  if (!existsSync(EVENTS_FILE)) {
+    return { attacks: 0, inference: null, keeperhub: null };
+  }
+  let attacks = 0;
+  let inference: InferenceTrace | null = null;
+  let keeperhub: KeeperHubRun | null = null;
   try {
     const raw = await readFile(EVENTS_FILE, "utf8");
     const lines = raw.split("\n").filter(Boolean);
-    let count = 0;
     for (const line of lines) {
+      let e: { ts: number; headId: string; type: string; payload: Record<string, unknown> };
       try {
-        const e = JSON.parse(line);
-        if (e?.type === "resurrection.complete") count++;
+        e = JSON.parse(line);
       } catch {
-        // skip
+        continue;
+      }
+      if (e.type === "resurrection.complete") attacks++;
+      if (e.type === "compute.inference") {
+        inference = {
+          decision: String(e.payload.decision ?? ""),
+          verified: Boolean(e.payload.verified),
+          provider: String(e.payload.provider ?? ""),
+          model: String(e.payload.model ?? ""),
+          ms: Number(e.payload.ms ?? 0),
+          ts: e.ts,
+          by: e.headId,
+        };
+      }
+      if (e.type === "keeperhub.notify") {
+        const status = Number(e.payload.status ?? 0);
+        keeperhub = {
+          status,
+          runId: (e.payload.runId as string) ?? null,
+          cause: String(e.payload.cause ?? ""),
+          ts: e.ts,
+          ok: status > 0 && status < 400,
+        };
       }
     }
-    return count;
-  } catch {
-    return 0;
-  }
+  } catch {}
+  return { attacks, inference, keeperhub };
 }
 
 async function buildSnapshot(): Promise<SwarmSnapshot> {
   const allStates = await readHeadStates();
   const scars = await readScars();
-  const attacks = await countAttacksSurvived();
+  const { attacks, inference, keeperhub } = await scanEvents();
 
-  // Live = anything not status==="dead"
   const liveHeads = allStates.filter((h) => h.status !== "dead");
   const generation = Math.max(0, ...liveHeads.map((h) => h.generation));
   const aum = liveHeads
@@ -96,6 +127,8 @@ async function buildSnapshot(): Promise<SwarmSnapshot> {
     attacksSurvived: attacks,
     aum,
     lastEventAt: Date.now(),
+    inference,
+    keeperhub,
   };
 }
 
@@ -104,7 +137,6 @@ export async function GET() {
   const stream = new ReadableStream({
     async start(controller) {
       let closed = false;
-
       const send = (data: object) => {
         if (closed) return;
         try {
@@ -113,32 +145,24 @@ export async function GET() {
           closed = true;
         }
       };
-
       send(await buildSnapshot());
-
       const tick = async () => {
         if (closed) return;
         try {
           send(await buildSnapshot());
-        } catch {
-          // tolerate transient FS errors
-        }
+        } catch {}
       };
-
       const interval = setInterval(() => void tick(), 1_000);
       const cleanup = () => {
         closed = true;
         clearInterval(interval);
         try {
           controller.close();
-        } catch {
-          // already closed
-        }
+        } catch {}
       };
       setTimeout(cleanup, 10 * 60 * 1000);
     },
   });
-
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
@@ -149,5 +173,4 @@ export async function GET() {
   });
 }
 
-// stat used for change detection in future versions
 void stat;
