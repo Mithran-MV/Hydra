@@ -63,15 +63,25 @@ interface ScannedEvents {
   attacks: number;
   inference: InferenceTrace | null;
   keeperhub: KeeperHubRun | null;
+  depositsTotal: bigint;
+  redistributedTotal: bigint;
 }
 
 async function scanEvents(): Promise<ScannedEvents> {
   if (!existsSync(EVENTS_FILE)) {
-    return { attacks: 0, inference: null, keeperhub: null };
+    return {
+      attacks: 0,
+      inference: null,
+      keeperhub: null,
+      depositsTotal: 0n,
+      redistributedTotal: 0n,
+    };
   }
   let attacks = 0;
   let inference: InferenceTrace | null = null;
   let keeperhub: KeeperHubRun | null = null;
+  let depositsTotal = 0n;
+  let redistributedTotal = 0n;
   try {
     const raw = await readFile(EVENTS_FILE, "utf8");
     const lines = raw.split("\n").filter(Boolean);
@@ -83,6 +93,16 @@ async function scanEvents(): Promise<ScannedEvents> {
         continue;
       }
       if (e.type === "resurrection.complete") attacks++;
+      if (e.type === "treasury.deposit") {
+        try {
+          depositsTotal += BigInt(String(e.payload.amount ?? "0"));
+        } catch {}
+      }
+      if (e.type === "treasury.redistribute") {
+        try {
+          redistributedTotal += BigInt(String(e.payload.amount ?? "0"));
+        } catch {}
+      }
       if (e.type === "compute.inference") {
         inference = {
           decision: String(e.payload.decision ?? ""),
@@ -106,29 +126,35 @@ async function scanEvents(): Promise<ScannedEvents> {
       }
     }
   } catch {}
-  return { attacks, inference, keeperhub };
+  return { attacks, inference, keeperhub, depositsTotal, redistributedTotal };
 }
 
 async function buildSnapshot(): Promise<SwarmSnapshot> {
   const allStates = await readHeadStates();
   const scars = await readScars();
-  const { attacks, inference, keeperhub } = await scanEvents();
+  const { attacks, inference, keeperhub, depositsTotal, redistributedTotal } =
+    await scanEvents();
 
   const liveHeads = allStates.filter((h) => h.status !== "dead");
   const generation = Math.max(0, ...liveHeads.map((h) => h.generation));
-  const aum = liveHeads
-    .reduce((sum, h) => sum + Number(h.balance ?? 0), 0)
-    .toString();
+  // AUM = sum of recorded balances on live heads (set by treasury.deposit events).
+  // Falls back to 0 when no deposits yet.
+  const aumWei = liveHeads.reduce(
+    (sum, h) => sum + BigInt(h.balance ?? "0"),
+    0n,
+  );
 
   return {
     generation,
     heads: liveHeads,
     scars,
     attacksSurvived: attacks,
-    aum,
+    aum: aumWei.toString(),
     lastEventAt: Date.now(),
     inference,
     keeperhub,
+    valueProtectedWei: redistributedTotal.toString(),
+    valueDepositedWei: depositsTotal.toString(),
   };
 }
 
