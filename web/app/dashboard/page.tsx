@@ -78,7 +78,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <header className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+      <header className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
         <Stat label="Generation" value={snapshot.generation.toString()} />
         <Stat label="Heads alive" value={snapshot.heads.length.toString()} />
         <Stat label="Scars learned" value={snapshot.scars.length.toString()} />
@@ -86,7 +86,11 @@ export default function DashboardPage() {
           label="Attacks survived"
           value={snapshot.attacksSurvived.toString()}
         />
-        <Stat label="AUM" value={`${shortenWei(snapshot.aum)}`} />
+        <Stat label="AUM" value={shortenWei(snapshot.aum)} />
+        <Stat
+          label="Value protected"
+          value={shortenWei(snapshot.valueProtectedWei ?? "0")}
+        />
       </header>
 
       <section>
