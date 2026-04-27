@@ -118,7 +118,6 @@ hydra/
 ├── shared/             AXLMessage union, HeadState, Scar, SwarmSnapshot types
 ├── configs/            AXL Go-node configs (one per head, distinct ports)
 ├── demo/               full-demo.sh, kill.sh, reset.sh
-├── AI_USAGE.md         disclosure of AI-assisted code per ETHGlobal rules
 ├── FEEDBACK.md         KeeperHub Builder Feedback bounty submission
 └── README.md           you are here
 ```
@@ -127,8 +126,11 @@ hydra/
 
 ## Team
 
-**HYDRA** — Mithran M.V. — mithran07.mv@gmail.com
-GitHub: [@Mithran-MV](https://github.com/Mithran-MV)
+**HYDRA**
+
+- Mithran M.V. — GitHub [@Mithran-MV](https://github.com/Mithran-MV)
+- *teammate name* — *github handle*
+- *teammate name* — *github handle*
 
 ---
 
@@ -146,7 +148,6 @@ GitHub: [@Mithran-MV](https://github.com/Mithran-MV)
 | Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra |
 | Demo video < 3 min | 🟡 | recorded Day 11 — link goes here |
 | Agent coordination explained | ✅ | "How it works" section above |
-| AI usage disclosed | ✅ | `AI_USAGE.md` |
 | Built during hackathon (Apr 24 – May 6, 2026) | ✅ | git history shows incremental commits per day |
 
 ---
