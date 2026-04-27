@@ -25,11 +25,89 @@ Every agent system today is fragile. One compromised key, one crashed process, o
 | HydraRegistry  | [`0xc9dba9030dc15a2aa5d020cb4009ebfffc508ba3`](https://chainscan-galileo.0g.ai/address/0xc9dba9030dc15a2aa5d020cb4009ebfffc508ba3) |
 | HydraTreasury  | [`0xda181fdfd86965e83cddb9193734ed3e7c879171`](https://chainscan-galileo.0g.ai/address/0xda181fdfd86965e83cddb9193734ed3e7c879171) |
 | HydraExecutor  | [`0x1d5059499088ae2dcf77652562dd08f468a46a39`](https://chainscan-galileo.0g.ai/address/0x1d5059499088ae2dcf77652562dd08f468a46a39) |
-| HydraScars (iNFT) | [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/address/0x03210f64072ceb1040dbdd37b32e7b0caeeae320) |
+| HydraScars (iNFT) | [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320) |
 
-Deployer: `0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7`
+Deployer: [`0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7`](https://chainscan-galileo.0g.ai/address/0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7)
+
+**iNFT — intelligence embedded on chain.** Every learned defense rule mints
+a `HydraScars` token whose `tokenURI` returns on-chain JSON: the cause that
+killed the parent, the mitigation rule the swarm now carries, the generation
+that learned it, and the head it was learned from. The "intelligence" of
+the swarm — its accumulated defenses against attack — is therefore publicly
+auditable as ERC-721 metadata. Anyone can fetch a scar, read the rule, and
+inherit the swarm's hard-earned lessons.
+
+Example minted iNFT (test run, cause=`api_timeout`):
+[`tx 0x07c7a7c1...`](https://chainscan-galileo.0g.ai/tx/0x07c7a7c15609ecf1e06b10a3b954c4b69a2ccac9d0d6a2ada00b5a38ba4b55af)
 
 ---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                Dashboard (Next.js + SSE @ :3000)                    │
+│              SwarmGraph · TEE Badge · KH Run Card · Scars           │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │  /api/events SSE
+                               │  reads logs/og-kv + events.jsonl
+                               ▼
+   ┌────────────────────────────────────────────────────────────────┐
+   │                     LIVE SWARM (3 → 4 → 6 → …)                 │
+   │                                                                │
+   │   head-1 (Aave)        head-2 (UniV4 LP)     head-3 (Payroll)  │
+   │   peer-id 182cc…       peer-id f1741…        peer-id 1ef96…    │
+   │   wallet 0xA1C4…       wallet 0xaEE0…        wallet 0x1Cd5…    │
+   │      │                    │                     │              │
+   │      │ localhost:9002     │ localhost:9012      │ localhost:    │
+   │      ▼                    ▼                     ▼   9022       │
+   │   ┌──────┐  TLS+Yggdrasil mesh     ┌──────┐  ┌──────┐           │
+   │   │ AXL  │◄──────────────────────►│ AXL  │◄►│ AXL  │           │
+   │   │ Go   │  signed heartbeat 3s   │ Go   │  │ Go   │           │
+   │   │:9001 │  suspect / confirmed   │:9011 │  │:9021 │           │
+   │   └──────┘  resurrect / scar      └──────┘  └──────┘           │
+   │                  panic / born                                   │
+   └──┬─────────────────────────┬────────────────────────────┬──────┘
+      │                         │                            │
+      ▼                         ▼                            ▼
+  ┌───────────────┐    ┌────────────────────┐    ┌───────────────────┐
+  │ 0G Storage    │    │ KeeperHub          │    │ 0G Compute        │
+  │               │    │                    │    │                   │
+  │ • head state  │    │ workflow           │    │ TEE-verified      │
+  │   (KV)        │    │ lcyuk85gh46defy…   │    │ inference per     │
+  │ • scars       │    │                    │    │ resurrection.     │
+  │   (global KV  │    │ trigger: webhook   │    │ processResponse() │
+  │    + blob     │    │ action: Run Code   │    │ verifies TeeML.   │
+  │    upload)    │    │ exec'd via MCP →   │    │                   │
+  │               │    │ run history is     │    │                   │
+  │               │    │ external audit     │    │                   │
+  └───────────────┘    └────────────────────┘    └───────────────────┘
+                               │
+                               ▼
+   ┌────────────────────────────────────────────────────────────────┐
+   │              0G Galileo testnet · chain id 16602               │
+   │                                                                │
+   │   HydraRegistry        HydraTreasury       HydraExecutor       │
+   │   (events: Death,      (pooled funds,      (whitelisted        │
+   │    Born, Spawn,         per-head book-      (target, selector) │
+   │    Scar, Heartbeat)     keeping; only-      pairs only —       │
+   │                         Executor mutates)   actual drain       │
+   │                                             defense)           │
+   │                                                                │
+   │              HydraScars (iNFT — ERC-721 + on-chain             │
+   │              JSON metadata embedding the learned rule)         │
+   └────────────────────────────────────────────────────────────────┘
+```
+
+**The death ritual:** attack → head process dies → AXL `/recv` stops returning
+heartbeats from that peer → after 15 s scanner triggers `suspect` broadcast →
+quorum (⌈n/2⌉+1) reaches `confirmed` with cause from latest panic → leader
+(lowest-peer-id) writes scar to 0G global stream + broadcasts → mints iNFT
+on `HydraScars` → spawns 2 children with fresh ed25519 keys → children boot,
+inherit dead head's state from 0G KV, call 0G Compute (TEE-verified) for an
+action signal → KeeperHub workflow gets a webhook with the full payload for
+external audit. End state: swarm went 3 → 4 (one dead, two born), every
+surviving + future head now carries the new defense rule.
 
 ## How it works
 
