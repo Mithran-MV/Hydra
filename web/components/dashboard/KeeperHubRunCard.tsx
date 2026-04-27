@@ -44,7 +44,7 @@ export function KeeperHubRunCard({ run }: Props) {
       )}
       {!ok && run.status === 401 && (
         <div className="mt-2 text-[0.65rem] text-ember-400 leading-snug">
-          (webhook auth gap — see FEEDBACK.md F-1; workflow still executes via MCP)
+          (webhook auth gap — see KEEPERHUB_FEEDBACK.md; workflow still executes via MCP)
         </div>
       )}
     </div>
