@@ -283,14 +283,23 @@ function LiveAttacksCard() {
                   )}
                 </td>
                 <td className="px-2 py-2">
-                  <a
-                    href={CHAINSCAN_TX + a.deathTx}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
-                  >
-                    {shortenTx(a.deathTx)}
-                  </a>
+                  {a.deathTx ? (
+                    <a
+                      href={CHAINSCAN_TX + a.deathTx}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                    >
+                      {shortenTx(a.deathTx)}
+                    </a>
+                  ) : (
+                    <span
+                      className="text-ember-400/80"
+                      title={a.note ?? "death tx not on chain"}
+                    >
+                      nonce raced
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-2">
                   <a

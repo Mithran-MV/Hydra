@@ -61,14 +61,23 @@ export function LiveAttacks() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <a
-                      href={CHAINSCAN_TX + a.deathTx}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
-                    >
-                      {shortenTx(a.deathTx)}
-                    </a>
+                    {a.deathTx ? (
+                      <a
+                        href={CHAINSCAN_TX + a.deathTx}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                      >
+                        {shortenTx(a.deathTx)}
+                      </a>
+                    ) : (
+                      <span
+                        className="text-ember-400/80"
+                        title={a.note ?? "death tx not on chain"}
+                      >
+                        nonce raced
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
