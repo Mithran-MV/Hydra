@@ -189,8 +189,14 @@ export function Hero() {
                     />
                   </svg>
                 </Link>
-                <a href="/dashboard" className="hero-cta mythic-btn-ghost">
-                  Enter the Swarm →
+                <a
+                  href="https://github.com/Mithran-MV/Hydra"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hero-cta mythic-btn-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-venom-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+                  aria-label="HYDRA source code on GitHub (opens in new tab)"
+                >
+                  GitHub →
                 </a>
               </div>
 
