@@ -269,9 +269,9 @@ Each `HydraScars` token's `tokenURI` returns on-chain JSON describing the cause 
 
 | Sponsor | Role | Code |
 |---|---|---|
-| **Gensyn AXL** | P2P signed messaging across 3 separate Go nodes — all 7 message types active: heartbeat, suspect, confirmed, resurrect, born, scar, panic | `agents/src/axl/`, `configs/h*.json` |
-| **0G** | Storage (head state + global scars), Compute (TEE inference per resurrection), Chain (4 deployed contracts). Submitting to **both** 0G tracks: *Best Autonomous Agents, Swarms & iNFT Innovations* and *Best Agent Framework, Tooling & Core Extensions*. | `agents/src/memory/`, `contracts/contracts/`, `agents/src/execution/chain.ts` |
-| **KeeperHub** | Workflow orchestration (webhook trigger on confirmed death) + audit run history | `agents/src/execution/keeperhub.ts`, KH workflow `lcyuk85gh46defy5xaq8b` |
+| **Gensyn AXL** | P2P signed messaging across 3 separate Go nodes — all 7 message types active and proven on chain (heartbeat, suspect, confirmed, resurrect, born, scar, panic). **84,357 messages** logged in events.jsonl (44,922 send / 39,435 recv) across the swarm's lifetime; 26,169+ heartbeats. | `agents/src/axl/`, `configs/h*.json` |
+| **0G** | Chain — 4 contracts on Galileo 16602 (Registry, Treasury, Executor, HydraScars v2 ERC-721); **4 iNFTs** minted, one per attack. Storage — `uploadJsonToOG` lands real Indexer rootHash + txHash for every new scar (**2** verified uploads to date). Compute — SDK wired for TEE-attested child inference, Galileo-faucet-blocked → emits typed `compute.skip` per child boot. Submitting to **both** 0G tracks (Swarms+iNFT and Frameworks). | `agents/src/memory/`, `contracts/contracts/`, `agents/src/execution/chain.ts` |
+| **KeeperHub** | Workflow orchestration via MCP HTTP `execute_workflow` (org-scoped `kh_…` key, auth bypasses webhook 401 path). **26 executions** across 4 HYDRA workflows (`lcyuk85gh46defy5xaq8b` death-event · `uybkmq5v2mpvgji7933ji` treasury-redistribute · `up22dre1y0frp1pskrbuj` scar-mint · `6sdbtvyee2n0uihywyim3` heartbeat-stale), every run linkable from /chronicle Section 3. | `agents/src/execution/keeperhub.ts` |
 
 Each sponsor is load-bearing: without AXL the anti-fragility is centralized; without 0G death means amnesia; without KeeperHub the redistribution lacks an auditable third-party trail.
 
