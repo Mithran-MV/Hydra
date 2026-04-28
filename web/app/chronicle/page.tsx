@@ -651,14 +651,63 @@ function AxlStreamCard() {
   );
 }
 
+// Per-type colour treatment so each event row carries its own colour
+// rhythm. The first <td> wears a left-border in the same hue.
+const TYPE_STYLE: Record<
+  string,
+  { text: string; border: string; bgHover: string }
+> = {
+  scar: {
+    text: "text-ember-400",
+    border: "border-l-ember-400",
+    bgHover: "hover:bg-ember-500/5",
+  },
+  panic: {
+    text: "text-blood-500",
+    border: "border-l-blood-500",
+    bgHover: "hover:bg-blood-500/5",
+  },
+  confirmed: {
+    text: "text-blood-500",
+    border: "border-l-blood-500",
+    bgHover: "hover:bg-blood-500/5",
+  },
+  suspect: {
+    text: "text-blood-400",
+    border: "border-l-blood-400",
+    bgHover: "hover:bg-blood-500/5",
+  },
+  resurrect: {
+    text: "text-venom-400",
+    border: "border-l-venom-400",
+    bgHover: "hover:bg-venom-500/5",
+  },
+  born: {
+    text: "text-venom-300",
+    border: "border-l-venom-300",
+    bgHover: "hover:bg-venom-500/5",
+  },
+  heartbeat: {
+    text: "text-neutral-500",
+    border: "border-l-neutral-700",
+    bgHover: "hover:bg-ink-900/60",
+  },
+};
+const TYPE_FALLBACK = TYPE_STYLE.heartbeat;
+
 function AxlRow({ event: e }: { event: AxlEvent }) {
+  const style = TYPE_STYLE[e.msgType] ?? TYPE_FALLBACK;
   return (
-    <tr className="border-b border-ink-800/40 last:border-0">
-      <td className="px-2 py-1.5 text-neutral-500 whitespace-nowrap w-20">
+    <tr
+      className={`border-b border-ink-800/40 last:border-0 transition-colors ${style.bgHover}`}
+    >
+      <td
+        className={`px-2 py-1.5 text-neutral-500 whitespace-nowrap w-20 border-l-2 ${style.border}`}
+      >
         {timeAgo(e.ts)}
       </td>
       <td className="px-2 py-1.5 w-24">
-        <span className="text-venom-300">{e.msgType}</span>
+        <span className={`${style.text} font-medium`}>{e.msgType}</span>
       </td>
       <td className="px-2 py-1.5 text-neutral-400">{e.headId}…</td>
       <td className="px-2 py-1.5 text-neutral-500">←</td>
