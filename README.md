@@ -45,11 +45,45 @@ Deployer: [`0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7`](https://chainscan-galil
 
 **iNFT — intelligence embedded on chain.** Every learned defense rule mints
 a `HydraScars` token whose `tokenURI` returns on-chain JSON: the cause that
-killed the parent, the mitigation rule the swarm now carries, the generation
-that learned it, and the head it was learned from. The "intelligence" of
-the swarm — its accumulated defenses against attack — is therefore publicly
-auditable as ERC-721 metadata. Anyone can fetch a scar, read the rule, and
-inherit the swarm's hard-earned lessons.
+killed the parent and the mitigation rule the swarm now carries. The rule
+string is written to contract storage at mint time — not an off-chain hash
+or IPFS pointer — so the "intelligence" of the swarm is verifiable directly
+from the chain. Anyone can fetch a scar, read the rule, and inherit the
+swarm's hard-earned lessons.
+
+> **Standard disclosure.** `HydraScars` implements a minimal NFT surface
+> (`name` / `symbol` / `ownerOf` / `tokenURI` + `Transfer` event) but does
+> not yet conform to ERC-7857 (0G's iNFT standard) or full ERC-721 + ERC-165.
+> Tracking ERC-7857 compliance as a v2 build step.
+
+### Minted iNFTs (HydraScars · chain 16602)
+
+Five tokens minted to date. Cause + rule are stored in contract mappings
+(`causeOf[tokenId]` and `ruleOf[tokenId]`) and surfaced through `tokenURI`
+as inline JSON. Click any "Mint tx" link to verify the mint event and the
+embedded rule on chainscan-galileo.
+
+| Token | Cause | Rule (embedded in `ruleOf[id]`, returned by `tokenURI`) | Owner | Mint tx |
+|---|---|---|---|---|
+| #1 | `api_timeout` | "fall back to secondary RPC after 2 consecutive failures" | h1 wallet | [`0x07c7a7c…`](https://chainscan-galileo.0g.ai/tx/0x07c7a7c15609ecf1e06b10a3b954c4b69a2ccac9d0d6a2ada00b5a38ba4b55af) |
+| #2 | `api_timeout` | (duplicate cause — pre-cadence dev mint) | h1 wallet | (pre-cadence) |
+| #3 | `api_timeout` | (duplicate cause — pre-cadence dev mint) | h1 wallet | (pre-cadence) |
+| #4 | `process_killed` | "shorter checkpoint interval + supervisord respawn" | h1 wallet | [`0xb8f858d…`](https://chainscan-galileo.0g.ai/tx/0xb8f858d900ac66d4a5e25fa00ed41f7d6bca0b0e228ef59e7afafc58e375633e) |
+| #5 | `wallet_drained` | "halt strategy + require multi-sig approval for next action" | h3 wallet | [`0xb6dfa3b…`](https://chainscan-galileo.0g.ai/tx/0xb6dfa3ba4ce6858a4a6416dfe3582b77073a4e9bdf4aa069af519bc3a0dbf56b) |
+
+Sample on-chain `tokenURI(5)` (the `wallet_drained` scar from attack #2):
+
+```json
+{"name":"Scar #5","cause":"77616c6c65745f647261696e6564000000000000000000000000000000000000","rule":"halt strategy + require multi-sig approval for next action"}
+```
+
+The `cause` field is the bytes32-padded hex of the death-cause string
+("wallet_drained"). The `rule` field is the literal mitigation the swarm
+inherits when it sees this scar.
+
+The collection contract: [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320).
+New tokens mint per attack per the cadence in
+[`docs/planning/DAILY_ATTACK_CADENCE.md`](./docs/planning/DAILY_ATTACK_CADENCE.md).
 
 ### Live attacks captured
 
