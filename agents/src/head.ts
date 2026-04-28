@@ -29,7 +29,7 @@ import {
   depositToTreasury,
 } from "./execution/chain";
 import { ask as askOgCompute } from "./memory/og-compute";
-import { notifyRedistribute, notifyScarLearned } from "./execution/keeperhub";
+import { executeWorkflow, notifyScarLearned } from "./execution/keeperhub";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
 import type {
@@ -238,16 +238,25 @@ async function main() {
     } catch {
       // best-effort
     }
-    // 3. Fire KeeperHub webhook in parallel (independent of chain tx)
+    // 3. Fire KeeperHub direct execution in parallel (independent of chain tx).
+    //    The death-event workflow gets the redistribute payload so KH's run
+    //    history captures one death + spawn cycle per attack.
     if (result) {
-      void notifyRedistribute({
-        deadHead: target,
-        cause,
-        childHeads: result.childIds,
-        childIndices: result.childIndices,
-        ts: Date.now(),
-        authorityPeerId: identity.id,
-      });
+      const deathWorkflowId =
+        process.env.HYDRA_KH_DEATH_WORKFLOW_ID ?? "lcyuk85gh46defy5xaq8b";
+      void executeWorkflow(
+        deathWorkflowId,
+        {
+          kind: "death-event",
+          deadHead: target,
+          cause,
+          childHeads: result.childIds,
+          childIndices: result.childIndices,
+          ts: Date.now(),
+          authorityPeerId: identity.id,
+        },
+        "death-event",
+      );
     }
     // 4. Record on chain SERIALLY to avoid nonce collisions on the same wallet.
     //    Fire-and-forget the whole chain; failures are logged, not raised.
