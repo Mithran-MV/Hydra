@@ -3,6 +3,149 @@ import type { DeathCause, HeadId, Scar } from "../../../shared/types";
 import { emitEvent } from "../events";
 import { log } from "../util/log";
 
+const KH_MCP_ENDPOINT = "https://app.keeperhub.com/mcp";
+
+let cachedSession: { id: string; expMs: number } | null = null;
+
+async function getMcpSession(apiKey: string): Promise<string> {
+  if (cachedSession && cachedSession.expMs > Date.now() + 60_000) {
+    return cachedSession.id;
+  }
+  const r = await fetch(KH_MCP_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "hydra-agent", version: "1.0" },
+      },
+    }),
+  });
+  if (!r.ok) {
+    throw new Error(`KH initialize failed: HTTP ${r.status}`);
+  }
+  const sessionId = r.headers.get("mcp-session-id");
+  if (!sessionId) {
+    throw new Error("KH initialize did not return mcp-session-id");
+  }
+  // The session JWT carries `exp` in seconds; default to 23h if parse fails.
+  let expMs = Date.now() + 23 * 60 * 60 * 1000;
+  try {
+    const payload = JSON.parse(
+      Buffer.from(sessionId.split(".")[1], "base64").toString(),
+    );
+    if (typeof payload.exp === "number") expMs = payload.exp * 1000;
+  } catch {}
+  cachedSession = { id: sessionId, expMs };
+  return sessionId;
+}
+
+export interface ExecuteResult {
+  ok: boolean;
+  executionId: string | null;
+  status: string | null;
+  error: string | null;
+}
+
+/**
+ * Trigger a manual execution of a KeeperHub workflow over MCP HTTP.
+ *
+ * The agent's `KEEPERHUB_KEY` (org-scoped `kh_...`) authenticates the call.
+ * This bypasses the public webhook endpoint (which requires a `wfb_` user
+ * key per Luca's update — see KEEPERHUB_FEEDBACK.md) and lands a real
+ * run in the KH dashboard with the full input payload visible.
+ */
+export async function executeWorkflow(
+  workflowId: string,
+  input: object,
+): Promise<ExecuteResult> {
+  const apiKey = process.env.KEEPERHUB_KEY;
+  if (!apiKey || apiKey === "..." || apiKey.trim().length === 0) {
+    return {
+      ok: false,
+      executionId: null,
+      status: null,
+      error: "KEEPERHUB_KEY not set",
+    };
+  }
+  try {
+    const sessionId = await getMcpSession(apiKey);
+    const r = await fetch(KH_MCP_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        "mcp-session-id": sessionId,
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "execute_workflow",
+          arguments: { workflowId, input },
+        },
+      }),
+    });
+    if (!r.ok) {
+      const body = await r.text().catch(() => "");
+      return {
+        ok: false,
+        executionId: null,
+        status: null,
+        error: `HTTP ${r.status}: ${body.slice(0, 200)}`,
+      };
+    }
+    const j = (await r.json()) as {
+      result?: { content?: Array<{ text?: string }> };
+      error?: { message?: string };
+    };
+    if (j.error) {
+      return {
+        ok: false,
+        executionId: null,
+        status: null,
+        error: j.error.message ?? "unknown jsonrpc error",
+      };
+    }
+    const text = j.result?.content?.[0]?.text;
+    if (!text) {
+      return {
+        ok: false,
+        executionId: null,
+        status: null,
+        error: "no content in tool result",
+      };
+    }
+    const parsed = JSON.parse(text) as {
+      executionId?: string;
+      status?: string;
+    };
+    return {
+      ok: true,
+      executionId: parsed.executionId ?? null,
+      status: parsed.status ?? null,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      executionId: null,
+      status: null,
+      error: (err as Error).message,
+    };
+  }
+}
+
 /**
  * KeeperHub integration. HYDRA wires three distinct KH workflow types,
  * one per trigger style, so the platform's full surface gets exercised:
