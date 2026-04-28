@@ -6,100 +6,64 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const REPO_ROOT = resolve(process.cwd(), "..");
-const EVENTS_FILE = process.env.EVENTS_PATH
-  ? resolve(process.env.EVENTS_PATH)
-  : join(REPO_ROOT, "logs", "events.jsonl");
+const KH_LOG = process.env.KEEPERHUB_RUNS_PATH
+  ? resolve(process.env.KEEPERHUB_RUNS_PATH)
+  : join(REPO_ROOT, "logs", "keeperhub-runs.jsonl");
 
-interface KhRun {
+interface KhRunRecord {
   ts: number;
-  kind: "notify" | "skip";
-  workflow: string;
-  cause: string;
-  status: number | null;
-  ok: boolean | null;
-  runId: string | null;
-  reason: string | null;
+  workflowId: string;
+  workflowLabel: string;
+  ok: boolean;
+  executionId: string | null;
+  status: string | null;
+  error: string | null;
+  inputSummary: Record<string, unknown>;
 }
 
 interface KhSnapshot {
   refreshedAt: number;
-  workflowId: string;
   totalRuns: number;
-  runs: KhRun[];
+  workflows: Array<{ id: string; label: string; runs: number }>;
+  runs: KhRunRecord[];
 }
 
-const WORKFLOW_ID = "lcyuk85gh46defy5xaq8b";
+const MAX_RUNS = 50;
 
 export async function GET() {
   const refreshedAt = Date.now();
-  const runs: KhRun[] = [];
+  const runs: KhRunRecord[] = [];
 
-  if (existsSync(EVENTS_FILE)) {
+  if (existsSync(KH_LOG)) {
     try {
-      const raw = await readFile(EVENTS_FILE, "utf8");
+      const raw = await readFile(KH_LOG, "utf8");
       const lines = raw.split("\n").filter(Boolean);
       for (const line of lines) {
-        let e: {
-          ts: number;
-          type: string;
-          payload: Record<string, unknown>;
-        };
         try {
-          e = JSON.parse(line);
-        } catch {
-          continue;
-        }
-        if (!e.type.startsWith("keeperhub.")) continue;
-        if (e.type === "keeperhub.notify") {
-          const status = Number(e.payload.status ?? 0);
-          runs.push({
-            ts: e.ts,
-            kind: "notify",
-            workflow: deriveWorkflow(e.type, e.payload),
-            cause: String(e.payload.cause ?? "—"),
-            status,
-            ok: status > 0 && status < 400,
-            runId: (e.payload.runId as string) ?? null,
-            reason: null,
-          });
-        } else if (
-          e.type === "keeperhub.heartbeat-stale.skip" ||
-          e.type === "keeperhub.scar-learned.skip" ||
-          e.type === "keeperhub.skip"
-        ) {
-          runs.push({
-            ts: e.ts,
-            kind: "skip",
-            workflow: deriveWorkflow(e.type, e.payload),
-            cause: String(e.payload.cause ?? "—"),
-            status: null,
-            ok: null,
-            runId: null,
-            reason: String(e.payload.reason ?? "configuration not set"),
-          });
-        }
+          runs.push(JSON.parse(line) as KhRunRecord);
+        } catch {}
       }
     } catch {}
   }
 
-  // newest first, cap at 50
+  // newest first
   runs.sort((a, b) => b.ts - a.ts);
-  const trimmed = runs.slice(0, 50);
 
-  const snapshot: KhSnapshot = {
+  const byWorkflow = new Map<string, { id: string; label: string; runs: number }>();
+  for (const r of runs) {
+    const existing = byWorkflow.get(r.workflowId);
+    if (existing) existing.runs += 1;
+    else byWorkflow.set(r.workflowId, { id: r.workflowId, label: r.workflowLabel, runs: 1 });
+  }
+
+  const snap: KhSnapshot = {
     refreshedAt,
-    workflowId: WORKFLOW_ID,
     totalRuns: runs.length,
-    runs: trimmed,
+    workflows: [...byWorkflow.values()],
+    runs: runs.slice(0, MAX_RUNS),
   };
 
-  return Response.json(snapshot, {
+  return Response.json(snap, {
     headers: { "Cache-Control": "no-store" },
   });
-}
-
-function deriveWorkflow(type: string, _payload: Record<string, unknown>): string {
-  if (type.includes("heartbeat")) return "heartbeat-stale";
-  if (type.includes("scar")) return "scar-learned";
-  return "redistribute";
 }
