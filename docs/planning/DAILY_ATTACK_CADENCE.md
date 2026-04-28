@@ -13,18 +13,21 @@
 
 ## Schedule
 
-| Day | Date | Action | Cause | Target | After-state |
+| Day | Date | Action | Cause | Target | Expected outcome |
 |---|---|---|---|---|---|
-| D5 | Apr 28 | Attack #1 | `process_killed` | h2 (univ4_lp) | gen 1 · 4 heads · 1 scar (done) |
-| D5 | Apr 28 | Attack #2 (+30 min) | `wallet_drained` | h1 (aave_deposit) | gen 1 · 5+ heads · 2 scars |
-| D6 | Apr 29 | Attack #3 | `api_timeout` | h3 (payroll) | gen 1 · 6+ heads · 3 scars |
-| D7 | Apr 30 | Soft reset + Attack #4 | `key_revoked` | reset h2 | gen 1 · 4 heads · 4 scars (full cause set) |
-| D8 | May 1 | Attack #5 | `wallet_drained` | h1 | gen 1-2 · 5 heads · 4 scars |
-| D9 | May 2 | **Double-kill** stress test | `api_timeout` × 2 | h2 + h3 | gen 2 · 6 heads · 4 scars (Shot 7 capture) |
-| D10 | May 3 | Hard reset + Attack #6 | `process_killed` | h2 | gen 1 · 4 heads · 4 scars (clean state for demo) |
+| D5 | Apr 28 | Attack #1 ✓ | `process_killed` | h2 (univ4_lp) | killed → resurrected · 1st scar of cause |
+| D5 | Apr 28 | Attack #2 ✓ | `wallet_drained` | h1 (aave_deposit) | killed → resurrected · 1st scar of cause (caught 3 bugs in path before firing — see `docs/ADVERSARIAL_TESTING.md`) |
+| D6 | Apr 29 | Attack #3 | `api_timeout` | h3 (payroll) | killed → resurrected · 1st scar of cause |
+| **D7** | **Apr 30** | **Build day — ship scar-enforced defense** | — | — | Wire `wallet_drained` scar's value-cap into `HydraExecutor` pre-tx hook so a second drain attempt is **blocked**, not just resurrected from |
+| D7 | Apr 30 | Soft reset + Attack #4 | `key_revoked` | revived h2 | killed → resurrected · 1st scar of cause (full cause set covered) |
+| D8 | May 1 | Attack #5 | `wallet_drained` | h1 | **defended (scar from #2)** if D7 build shipped, else killed → resurrected |
+| D9 | May 2 | **Double-kill** stress test | `api_timeout` × 2 | h2 + h3 | killed × 2 → resurrected (Shot 7 capture for demo) |
+| D10 | May 3 | Hard reset + Attack #6 | `process_killed` | clean h2 | **defended (scar from #1)** — clean state on demo day with all four scars enforced |
 | D11 | May 4 | (no attack) | — | — | record demo video on D10's clean post-attack state |
 
-Each row produces a fresh scar broadcast to the swarm and 5 fresh on-chain tx hashes (death / scar / iNFT mint / 2 born). Each gets appended to `README.md` as a row in the "Live attacks captured" table — incremental, one commit per attack.
+Each "killed → resurrected" row produces 5 fresh on-chain tx hashes (death / scar / iNFT mint / 2 born). Each "defended" row produces 1 tx (the blocked-attempt event) + 0 new born / 0 new scar mint — proving the swarm's accumulated immunity.
+
+Every attack gets one row appended to `README.md`'s "Live attacks captured" table, incremental, one commit per attack. Per-attack journalctl traces under `docs/attacks/`.
 
 ---
 
@@ -65,4 +68,4 @@ To force a specific cause, use `./demo/kill.sh <head-index> --cause <cause>` —
 
 This file is updated by hand after every attack. The README's "Live attacks captured" section is the canonical proof block — these notes are the *plan*, the README rows are the *receipts*.
 
-Last updated: 2026-04-28 (D5, attack #1 captured).
+Last updated: 2026-04-28 (D5, attacks #1 + #2 captured · 2 of 4 scar causes represented).
