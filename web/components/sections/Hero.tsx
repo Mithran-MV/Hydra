@@ -5,6 +5,7 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DeferredHydraScene } from "@/components/three/DeferredScene";
+import type { SwarmSnapshot } from "@shared/types";
 
 function MeshIdTag() {
   const [id, setId] = useState<string>("0x000");
@@ -204,16 +205,8 @@ export function Hero() {
                 </a>
               </div>
 
-              <div
-                ref={statsRef}
-                className="mt-14 grid grid-cols-2 max-w-md gap-8"
-              >
-                <HeroStat
-                  label="Sponsors"
-                  value="3"
-                  sub="KeeperHub · AXL · 0G"
-                />
-                <HeroStat label="Deaths survived" value="∞" sub="by design" />
+              <div ref={statsRef} className="mt-14">
+                <HeroLiveStats />
               </div>
             </div>
 
@@ -279,4 +272,119 @@ function HeroStat({
       <div className="text-[0.72rem] text-neutral-500 mt-1">{sub}</div>
     </div>
   );
+}
+
+function shortenOg(wei: string): string {
+  try {
+    const og = Number(BigInt(wei)) / 1e18;
+    if (og === 0) return "0 OG";
+    if (og < 0.001) return og.toExponential(2) + " OG";
+    return og.toFixed(4) + " OG";
+  } catch {
+    return "—";
+  }
+}
+
+function HeroLiveStats() {
+  const [snapshot, setSnapshot] = useState<SwarmSnapshot | null>(null);
+  const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
+  const [stale, setStale] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let source: EventSource | null = null;
+    try {
+      source = new EventSource("/api/events");
+      source.onmessage = (e) => {
+        if (cancelled) return;
+        try {
+          const parsed = JSON.parse(e.data) as SwarmSnapshot;
+          setSnapshot(parsed);
+          setSnapshotAt(Date.now());
+          setStale(false);
+        } catch {}
+      };
+      source.onerror = () => {
+        if (!cancelled) setStale(true);
+      };
+    } catch {
+      if (!cancelled) setStale(true);
+    }
+    return () => {
+      cancelled = true;
+      source?.close();
+    };
+  }, []);
+
+  const stats: Array<{ label: string; value: string; sub: string }> = snapshot
+    ? [
+        {
+          label: "Attacks survived",
+          value: snapshot.attacksSurvived.toString(),
+          sub: snapshot.scars.length + " distinct scars",
+        },
+        {
+          label: "Generation",
+          value: snapshot.generation.toString(),
+          sub: snapshot.generation === 0 ? "originals" : "post-resurrection",
+        },
+        {
+          label: "Heads alive",
+          value: snapshot.heads.length.toString(),
+          sub: "across AXL mesh",
+        },
+        {
+          label: "AUM",
+          value: shortenOg(snapshot.aum),
+          sub: "on 0G Galileo",
+        },
+      ]
+    : [
+        { label: "Attacks survived", value: "—", sub: "connecting…" },
+        { label: "Generation", value: "—", sub: "connecting…" },
+        { label: "Heads alive", value: "—", sub: "connecting…" },
+        { label: "AUM", value: "—", sub: "connecting…" },
+      ];
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 md:grid-cols-4 max-w-2xl gap-8">
+        {stats.map((s) => (
+          <HeroStat key={s.label} label={s.label} value={s.value} sub={s.sub} />
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 font-mono text-[0.65rem] tracking-[0.25em] uppercase text-neutral-500">
+        {stale && snapshotAt ? (
+          <>
+            <span className="h-1 w-1 rounded-full bg-ember-400" />
+            snapshot from {formatRelativeTime(snapshotAt)} · reconnecting
+          </>
+        ) : stale ? (
+          <>
+            <span className="h-1 w-1 rounded-full bg-ember-400" />
+            no snapshot yet · waiting for swarm
+          </>
+        ) : snapshot ? (
+          <>
+            <span className="h-1 w-1 rounded-full bg-venom-400 animate-pulse" />
+            live · streaming from /api/events
+          </>
+        ) : (
+          <>
+            <span className="h-1 w-1 rounded-full bg-neutral-500" />
+            connecting…
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatRelativeTime(ts: number): string {
+  const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (sec < 60) return sec + "s ago";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + "m ago";
+  const hr = Math.floor(min / 60);
+  return hr + "h ago";
 }
