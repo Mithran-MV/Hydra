@@ -6,9 +6,16 @@
 [![Sponsors](https://img.shields.io/badge/sponsors-KeeperHub%20%C2%B7%20AXL%20%C2%B7%200G-ffb347?style=flat-square)](./SPONSORS.md)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 
-**An anti-fragile agent swarm. Kill one head, two grow back — carrying the dead head's memory and a permanent defense against whatever just killed it.**
+**An anti-fragile agent swarm. Kill one head, two grow back — carrying the dead head's memory and a permanent defense against whatever just killed it. All four kill types covered: `process_killed` · `wallet_drained` · `api_timeout` · `key_revoked`.**
 
-> Live now → **https://hydra.hacklabs.in/dashboard** · 3 heads on AXL mesh · 4 contracts on 0G Galileo · scars mint as iNFTs.
+> Live →
+> [**View live dashboard →**](https://hydra.hacklabs.in/dashboard) ·
+> [**Read the Chronicle →**](https://hydra.hacklabs.in/chronicle) ·
+> [**GitHub →**](https://github.com/Mithran-MV/Hydra)
+
+> **4 attacks captured** · 4 cause types · **26** KeeperHub runs across 4 workflows · **84,357** AXL messages (44,922 send / 39,435 recv) · **4 iNFTs** minted on HydraScars v2 · **2** 0G Storage uploads (rootHash + txHash on chainscan-galileo) · 176+ incremental commits.
+
+**Demo video** (≤ 3 min): *link will be added 2026-04-30 before submission.*
 
 **Production execution + learning layer for autonomous agent fleets.** When agents fail, the swarm doesn't just respawn them — it inherits their memory and a learned defense against the failure mode. Every attack hardens the network.
 
@@ -26,8 +33,8 @@ HYDRA is the layer underneath those agents. Each head runs the strategy you'd ru
 
 Agent operators get bounded downtime + cumulative immunity. Treasuries don't get drained — funds live in a constrained `HydraTreasury`, never in head EOAs, with execution gated behind a whitelist of (target, selector) pairs. A compromised head cannot route value anywhere except back to the treasury.
 
-**Live dashboard:** https://hydra.hacklabs.in/dashboard — three heads alive, mesh connected, real on-chain Treasury balance
-**Demo video:** [paste unlisted YouTube link before submission]
+**Live dashboard:** https://hydra.hacklabs.in/dashboard — three originals plus gen-1 children, mesh connected, on-chain Treasury balance live
+**The Chronicle (verifiable evidence):** https://hydra.hacklabs.in/chronicle — every claim above traceable to a tx hash, KH execution id, or events.jsonl line
 **Repository:** https://github.com/Mithran-MV/Hydra
 
 ---
