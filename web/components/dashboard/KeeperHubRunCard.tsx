@@ -9,8 +9,8 @@ interface Props {
 export function KeeperHubRunCard({ run }: Props) {
   if (!run) {
     return (
-      <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 font-mono text-xs">
-        <div className="text-xs uppercase tracking-widest text-neutral-500">
+      <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 font-mono text-xs transition-all duration-200 hover:border-venom-500/60 hover:shadow-[0_0_24px_-4px_rgba(55,255,158,0.25)]">
+        <div className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-neutral-500">
           KeeperHub · last run
         </div>
         <div className="mt-2 text-neutral-600">
@@ -22,13 +22,13 @@ export function KeeperHubRunCard({ run }: Props) {
   const ok = run.ok;
   return (
     <div
-      className={`rounded-xl border p-4 font-mono text-xs ${
+      className={`rounded-xl border p-4 font-mono text-xs transition-all duration-200 hover:shadow-[0_0_24px_-4px_rgba(55,255,158,0.35)] ${
         ok
           ? "border-venom-700/60 bg-venom-800/10"
           : "border-blood-700/60 bg-blood-800/10"
       }`}
     >
-      <div className="flex items-center justify-between text-xs uppercase tracking-widest">
+      <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.3em]">
         <span className="text-neutral-500">KeeperHub · last run</span>
         <span className={ok ? "text-venom-400" : "text-blood-400"}>
           {ok ? "✓ delivered" : `✗ ${run.status}`}
