@@ -49,6 +49,10 @@ born       → "a new peer just joined the mesh"
 scar       → "the swarm has learned a new defense rule"
 ```
 
+### Known limitation — children orphaned on leader Node restart
+
+Children spawned by resurrection live as `child_process.spawn` descendants of the leader's Node process at the moment of confirmation. If systemd restarts the leader, those children are reparented to PID 1 and continue running, but they're not first-class systemd-managed services — a host reboot or a `systemctl reset-failed` will lose them. This is acceptable for the hackathon swarm-of-3 demo: the originals are systemd-managed, attacks land + resurrect cleanly, and the dashboard reflects the live state. v2 work converts child spawn to dynamic systemd units (`hydra-head@N.service` template, written by resurrection.ts before `start`), removing the orphan path entirely.
+
 ### What breaks without AXL
 
 The death detection pipeline collapses to a polled center (one process watching the others). Once a single watcher exists, the system is no longer anti-fragile — kill the watcher and nothing notices. This is the prize criterion in inverse: *AXL's value to HYDRA is that the swarm cannot be centralized.*
