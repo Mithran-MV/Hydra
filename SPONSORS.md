@@ -63,15 +63,16 @@ The death detection pipeline collapses to a polled center (one process watching 
 
 **Prize criterion:** *"Best Autonomous Agents, Swarms & iNFT Innovations"* (Track 2). HYDRA also fits Track 1 (*"Best Agent Framework, Tooling & Core Extensions"*) since the swarm orchestrator is reusable infrastructure, not just one product. Per ETHGlobal's submission rules, picking 0G consumes one of the 3 partner-prize slots regardless of how many of 0G's tracks the project applies to.
 
-### Three integrations, three outcomes
+### Three surfaces, real-vs-aspirational
 
-| 0G surface | What HYDRA stores there | File |
-|---|---|---|
-| Storage (KV) | per-head `HeadState` snapshots (current JSON, overwritten every 10 s) | `agents/src/memory/og-kv.ts` |
-| Storage (Log) | append-only event stream (heartbeats, deaths, scars, mints) | `agents/src/memory/og-log.ts` |
-| Storage (Blob) | bulk dataset uploads via `Indexer` + `Batcher` | `agents/src/memory/og-storage.ts` |
-| Compute | TEE-attested inference per resurrection (`createZGComputeNetworkBroker`) | `agents/src/memory/og-compute.ts` |
-| Chain | 4 contracts on chain 16602 (Galileo testnet) | `agents/src/execution/chain.ts` |
+Honest accounting of what's on-network today vs what's wired but blocked vs what's local-mirrored:
+
+| 0G surface | Status | Detail | File |
+|---|---|---|---|
+| Chain | **fully live** | 4 contracts deployed on chain 16602; 3 attacks worth of tx hashes (death/scar/iNFT/2 born = 5 per attack); HydraScars v2 is full ERC-721 + ERC-165 + Metadata | `agents/src/execution/chain.ts` |
+| Storage — Blob (scars) | **live with `OG_STORAGE_LIVE=1`** | Every new scar fires `uploadJsonToOG` via `@0gfoundation/0g-ts-sdk` Indexer; returns `rootHash` + `txHash`. Wired since `a47b306`. Each scar is independently durable on the 0G Storage Indexer. | `agents/src/memory/og-storage.ts`, called from `agents/src/scars.ts:40` |
+| Storage — KV (head state) | **local mirror — D7 build target** | `kvSet` / `kvGet` / `appendLog` write to `logs/og-kv/` and `logs/og-log/` on disk. The `liveSet` / `liveGet` paths are stubs that fall back to local with an explicit warn log. The interface is shaped to match the SDK so the storage backend swap is one line per function. | `agents/src/memory/og-kv.ts`, `og-log.ts` |
+| Compute — TEE inference | **wired, faucet-blocked** | `og-compute.ts ask()` is fully implemented (`createZGComputeNetworkBroker`, `processResponse` for TeeML attestation). With `OG_COMPUTE_LIVE=1`, every child boot calls it. On Galileo testnet the broker's 3 OG ledger minimum vs the 0.1 OG / day faucet cap means each call typically lands as a `compute.skip` event with a typed funding-gap error rather than a TEE-attested response. The agent surfaces both paths to `events.jsonl` and `/evidence` Section 3. | `agents/src/memory/og-compute.ts` |
 
 ### Compute — the TEE-attested inference
 
