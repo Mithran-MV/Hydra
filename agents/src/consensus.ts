@@ -145,9 +145,14 @@ export function startConsensus(
   }
 
   function handlePanic(msg: Extract<AXLMessage, { type: "panic" }>): void {
-    // First panic wins: a user-injected cause (kill.sh) should not be
+    // First panic wins so a user-injected cause from kill.sh isn't
     // overwritten by the SIGTERM handler's default `process_killed`.
-    if (!recentPanics.has(msg.from)) {
+    // But a stale entry from a prior incident on the same head must
+    // not block a fresh panic — otherwise repeat attacks on the same
+    // target carry the wrong cause forever (within process lifetime).
+    const existing = recentPanics.get(msg.from);
+    const isStale = existing && Date.now() - existing.ts >= 30_000;
+    if (!existing || isStale) {
       recentPanics.set(msg.from, {
         cause: msg.reason as DeathCause,
         ts: msg.ts,
