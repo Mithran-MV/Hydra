@@ -161,9 +161,13 @@ export function Hero() {
                 <span className="text-gradient-venom">{title}</span>
               </h1>
 
+              <p className="hero-pitch mt-6 max-w-2xl text-[1.3rem] md:text-[1.55rem] leading-tight text-neutral-100 font-light">
+                An agent swarm that gets stronger every time it&apos;s attacked.
+              </p>
+
               <p
                 ref={subtitleRef}
-                className="mt-8 max-w-xl text-[1.05rem] md:text-[1.15rem] leading-relaxed text-neutral-300 font-light"
+                className="mt-5 max-w-xl text-[1.05rem] md:text-[1.15rem] leading-relaxed text-neutral-300 font-light"
               >
                 Production execution + learning layer for autonomous agent
                 fleets. Cut off one head,{" "}
