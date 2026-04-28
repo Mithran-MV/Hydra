@@ -10,7 +10,7 @@ import type { Identity } from "./identity";
 import type { AXLClient } from "./axl/client";
 import type { Mesh } from "./axl/mesh";
 import { emitEvent } from "./events";
-import { notifyHeartbeatStale } from "./execution/keeperhub";
+import { executeWorkflow } from "./execution/keeperhub";
 import { log } from "./util/log";
 
 const SCAN_INTERVAL_MS = 1_000;
@@ -191,16 +191,21 @@ export function startConsensus(
         // Always broadcast our own suspect — peers add us to their suspecters set.
         broadcastSuspect(peer.id);
         evaluateQuorum(peer.id);
-        // KH workflow #2 — heartbeat-stale audit (independent of consensus)
-        void notifyHeartbeatStale(
+        // KH workflow — heartbeat-stale audit (independent of consensus)
+        const heartbeatWorkflowId =
+          process.env.HYDRA_KH_HEARTBEAT_WORKFLOW_ID ?? "6sdbtvyee2n0uihywyim3";
+        void executeWorkflow(
+          heartbeatWorkflowId,
           {
+            kind: "heartbeat-stale",
             peerId: peer.id,
             headIndex: peer.headIndex,
             lastHeartbeatAt: peer.lastSeen,
             staleByMs: since,
             ts: now,
+            authorityPeerId: ctx.identity.id,
           },
-          ctx.identity.id,
+          "heartbeat-stale",
         );
       }
     }
