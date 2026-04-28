@@ -1,9 +1,33 @@
 import { request } from "undici";
+import { appendFile, mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import type { DeathCause, HeadId, Scar } from "../../../shared/types";
 import { emitEvent } from "../events";
 import { log } from "../util/log";
 
 const KH_MCP_ENDPOINT = "https://app.keeperhub.com/mcp";
+
+const KH_RUNS_LOG = resolve(process.cwd(), "logs", "keeperhub-runs.jsonl");
+
+interface KhRunRecord {
+  ts: number;
+  workflowId: string;
+  workflowLabel: string;
+  ok: boolean;
+  executionId: string | null;
+  status: string | null;
+  error: string | null;
+  inputSummary: Record<string, unknown>;
+}
+
+async function appendKhRun(record: KhRunRecord): Promise<void> {
+  try {
+    await mkdir(dirname(KH_RUNS_LOG), { recursive: true });
+    await appendFile(KH_RUNS_LOG, JSON.stringify(record) + "\n", "utf8");
+  } catch (err) {
+    log.warn(`KH run log append failed: ${(err as Error).message}`);
+  }
+}
 
 let cachedSession: { id: string; expMs: number } | null = null;
 
@@ -66,15 +90,32 @@ export interface ExecuteResult {
 export async function executeWorkflow(
   workflowId: string,
   input: object,
+  workflowLabel = "unspecified",
 ): Promise<ExecuteResult> {
   const apiKey = process.env.KEEPERHUB_KEY;
+  const inputSummary = summariseInput(input);
+
+  const finish = async (result: ExecuteResult): Promise<ExecuteResult> => {
+    await appendKhRun({
+      ts: Date.now(),
+      workflowId,
+      workflowLabel,
+      ok: result.ok,
+      executionId: result.executionId,
+      status: result.status,
+      error: result.error,
+      inputSummary,
+    });
+    return result;
+  };
+
   if (!apiKey || apiKey === "..." || apiKey.trim().length === 0) {
-    return {
+    return finish({
       ok: false,
       executionId: null,
       status: null,
       error: "KEEPERHUB_KEY not set",
-    };
+    });
   }
   try {
     const sessionId = await getMcpSession(apiKey);
@@ -98,52 +139,71 @@ export async function executeWorkflow(
     });
     if (!r.ok) {
       const body = await r.text().catch(() => "");
-      return {
+      return finish({
         ok: false,
         executionId: null,
         status: null,
         error: `HTTP ${r.status}: ${body.slice(0, 200)}`,
-      };
+      });
     }
     const j = (await r.json()) as {
       result?: { content?: Array<{ text?: string }> };
       error?: { message?: string };
     };
     if (j.error) {
-      return {
+      return finish({
         ok: false,
         executionId: null,
         status: null,
         error: j.error.message ?? "unknown jsonrpc error",
-      };
+      });
     }
     const text = j.result?.content?.[0]?.text;
     if (!text) {
-      return {
+      return finish({
         ok: false,
         executionId: null,
         status: null,
         error: "no content in tool result",
-      };
+      });
     }
     const parsed = JSON.parse(text) as {
       executionId?: string;
       status?: string;
     };
-    return {
+    log.info(
+      `🔔 KH ${workflowLabel}: executionId=${parsed.executionId ?? "?"} status=${parsed.status ?? "?"}`,
+    );
+    return finish({
       ok: true,
       executionId: parsed.executionId ?? null,
       status: parsed.status ?? null,
       error: null,
-    };
+    });
   } catch (err) {
-    return {
+    return finish({
       ok: false,
       executionId: null,
       status: null,
       error: (err as Error).message,
-    };
+    });
   }
+}
+
+function summariseInput(input: object): Record<string, unknown> {
+  // Keep the agent-side log compact: top-level scalars + array lengths only.
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) {
+    if (v === null || v === undefined) {
+      out[k] = v;
+    } else if (typeof v === "object") {
+      if (Array.isArray(v)) out[k] = `[${v.length} items]`;
+      else out[k] = "[object]";
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
 }
 
 /**
