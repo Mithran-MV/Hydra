@@ -452,7 +452,70 @@ function KeeperHubCard() {
   );
 }
 
+interface AxlEvent {
+  ts: number;
+  headId: string;
+  msgType: string;
+  from: string;
+}
+
+interface AxlSnapshot {
+  refreshedAt: number;
+  lastMinuteCount: number;
+  events: AxlEvent[];
+}
+
+const AXL_FILTER_TYPES = [
+  "heartbeat",
+  "suspect",
+  "confirmed",
+  "resurrect",
+  "born",
+  "scar",
+  "panic",
+] as const;
+
 function AxlStreamCard() {
+  const [snap, setSnap] = useState<AxlSnapshot | null>(null);
+  const [active, setActive] = useState<Set<string>>(new Set(AXL_FILTER_TYPES));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const r = await fetch("/api/axl-recent", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = (await r.json()) as AxlSnapshot;
+        if (!cancelled) {
+          setSnap(data);
+          setError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
+      }
+    };
+    void fetchOnce();
+    const i = setInterval(() => void fetchOnce(), 4_000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
+  }, []);
+
+  const toggleFilter = (t: string) => {
+    setActive((prev) => {
+      const n = new Set(prev);
+      if (n.has(t)) n.delete(t);
+      else n.add(t);
+      return n;
+    });
+  };
+
+  const filtered = snap
+    ? snap.events.filter((e) => active.has(e.msgType))
+    : [];
+
   return (
     <EvidenceCard
       label="Codex iv · Mesh"
@@ -462,7 +525,62 @@ function AxlStreamCard() {
         text: "gensyn-ai/axl",
       }}
     >
-      <Placeholder note="instrumenting on next attack — recent AXL recv events to land in section commit" />
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {AXL_FILTER_TYPES.map((t) => {
+          const on = active.has(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggleFilter(t)}
+              className={`px-2 py-1 rounded font-mono text-[0.65rem] tracking-[0.2em] uppercase border transition-colors ${
+                on
+                  ? "border-venom-400/60 text-venom-300 bg-venom-500/10"
+                  : "border-ink-700 text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              {t}
+            </button>
+          );
+        })}
+        <span className="ml-auto text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono">
+          {snap ? `${snap.lastMinuteCount} msgs in 60s` : "—"}
+        </span>
+      </div>
+      {snap ? (
+        filtered.length === 0 ? (
+          <Placeholder note="no AXL messages match the active filter — toggle a chip" />
+        ) : (
+          <div className="max-h-72 overflow-y-auto rounded border border-ink-700/60 bg-ink-950/40">
+            <table className="w-full text-xs font-mono">
+              <tbody>
+                {filtered.map((e, i) => (
+                  <tr
+                    key={`${e.ts}-${i}`}
+                    className="border-b border-ink-800/40 last:border-0"
+                  >
+                    <td className="px-2 py-1.5 text-neutral-500 whitespace-nowrap w-20">
+                      {timeAgo(e.ts)}
+                    </td>
+                    <td className="px-2 py-1.5 w-24">
+                      <span className="text-venom-300">{e.msgType}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-neutral-400">
+                      {e.headId}…
+                    </td>
+                    <td className="px-2 py-1.5 text-neutral-500">←</td>
+                    <td className="px-2 py-1.5 text-neutral-300">{e.from}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      ) : error ? (
+        <Placeholder note={`fetch failed: ${error}`} />
+      ) : (
+        <Placeholder note="reading from logs/events.jsonl…" />
+      )}
     </EvidenceCard>
   );
 }
