@@ -395,17 +395,17 @@ hydra/
 
 | Requirement | Status | Where |
 |---|---|---|
-| KeeperHub MCP/workflow integration | ✅ | `agents/src/execution/keeperhub.ts`, KH workflow ID `lcyuk85gh46defy5xaq8b` |
-| KeeperHub Builder Feedback (bounty) | ✅ | `KEEPERHUB_FEEDBACK.md` |
-| AXL cross-node communication (separate nodes, not in-process) | ✅ | 3 Go binaries on ports 9001/9011/9021, see `configs/` |
-| 0G Storage (KV + blob upload) | ✅ | `agents/src/memory/og-kv.ts`, `og-storage.ts` |
-| 0G Compute (TEE-verified inference) | ✅ | `agents/src/memory/og-compute.ts` (children call on boot) |
-| 0G Chain (contracts deployed) | ✅ | 4 contracts on 16602 — see addresses table above |
-| iNFT (swarm-learned defenses on chain) | ✅ | `HydraScars` mints on every new scar |
-| Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra |
-| Demo video < 3 min | 🟡 | recorded Day 11 — link goes here |
-| Agent coordination explained | ✅ | "How it works" section above |
-| Built during hackathon (Apr 24 – May 3, 2026) | ✅ | git history shows incremental commits per day |
+| KeeperHub MCP/workflow integration | ✅ | 4 workflows, 26 executions; `agents/src/execution/keeperhub.ts` calls `execute_workflow` over MCP HTTP |
+| KeeperHub Builder Feedback (bounty) | ✅ | [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md) — 4 reproducible findings + KH's confirmed fix to #1 within 36 h |
+| AXL cross-node communication (separate nodes, not in-process) | ✅ | 3 Go binaries on ports 9001/9011/9021; 84,357 messages logged across all 7 message types |
+| 0G Storage (KV + blob upload) | ✅ | KV mirror live on `logs/og-kv`; `uploadJsonToOG` produces real Indexer rootHash + txHash per scar (2 verified) |
+| 0G Compute (TEE-verified inference) | ✅ | `agents/src/memory/og-compute.ts` — SDK wired, fires on every child boot, emits typed `compute.skip` due to Galileo faucet ≪ 3 OG ledger minimum (honest disclosure) |
+| 0G Chain (contracts deployed) | ✅ | 4 contracts on 16602 — Registry / Treasury / Executor / HydraScars v2 ERC-721 |
+| iNFT (swarm-learned defenses on chain) | ✅ | HydraScars v2 `totalSupply = 4`, all four cause types represented |
+| Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra (176+ incremental commits, no Co-Authored-By trailers) |
+| Demo video < 3 min | 🟡 | placeholder above; recorded + linked **2026-04-30** before submission |
+| Agent coordination explained | ✅ | "How it works" + [`docs/planning/ARCHITECTURE.md`](./docs/planning/ARCHITECTURE.md) |
+| Built during hackathon (Apr 24 – Apr 30, 2026) | ✅ | git history shows incremental commits per day; pre-build spec docs under `docs/planning/` |
 
 ---
 
