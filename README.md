@@ -51,24 +51,23 @@ the swarm — its accumulated defenses against attack — is therefore publicly
 auditable as ERC-721 metadata. Anyone can fetch a scar, read the rule, and
 inherit the swarm's hard-earned lessons.
 
-### Live attack — captured 2026-04-28 11:52 UTC
+### Live attacks captured
 
-A `process_killed` attack on head-2 (`f17413e0…`, univ4_lp strategy) on the
-`hydra.hacklabs.in` deployment. Total elapsed: detection at +15.3 s, full
-on-chain settlement at +24 s. All five tx hashes are pinned below for
-independent verification on chainscan-galileo.
+The swarm at `hydra.hacklabs.in` runs continuously. Every row below is a real
+attack against the live deployment, captured with five on-chain proofs that
+anyone can verify on chainscan-galileo. The table grows by one row per attack
+through D11 (May 4) per the daily cadence in `docs/planning/DAILY_ATTACK_CADENCE.md`.
+For current swarm state see the [live dashboard](https://hydra.hacklabs.in/dashboard).
 
-| Step | Tx | What it proves |
-|---|---|---|
-| 1 — death recorded | [`0xed1c918…`](https://chainscan-galileo.0g.ai/tx/0xed1c91804448c8701f9c26aa4e3c55e9485ab566cd87d8370abecfa6a077e59b) | Registry knows head-2 is gone, cause=`process_killed` |
-| 2 — scar recorded | [`0x857e9f1…`](https://chainscan-galileo.0g.ai/tx/0x857e9f1234abbd35aa146adedc36e9b51fc2edf783ed288b364b4229dfa6099c) | Defense rule "checkpoint state to 0G on every heartbeat" pinned to chain |
-| 3 — iNFT minted | [`0xb8f858d…`](https://chainscan-galileo.0g.ai/tx/0xb8f858d900ac66d4a5e25fa00ed41f7d6bca0b0e228ef59e7afafc58e375633e) | ERC-721 token with the rule embedded as on-chain metadata |
-| 4 — child h4 born | [`0x9350a6f…`](https://chainscan-galileo.0g.ai/tx/0x9350a6fbc33d958cc78a3319c0ffe5b5059fe51a1d4d63e90136940c8489866d) | First replacement, generation 1, parent=head-2 |
-| 5 — child h5 born | [`0xd2120eb…`](https://chainscan-galileo.0g.ai/tx/0xd2120eb6cbe7d8a99b7a6ed278d2d30fa554d6112bb11e9e8d90ccf465f00822) | Second replacement, generation 1, parent=head-2 |
+| # | UTC | Cause | Target | Outcome | Death | Scar | iNFT | Born ×2 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 04-28 11:52 | `process_killed` | h2 (univ4_lp) | killed → resurrected | [`0xed1c918…`](https://chainscan-galileo.0g.ai/tx/0xed1c91804448c8701f9c26aa4e3c55e9485ab566cd87d8370abecfa6a077e59b) | [`0x857e9f1…`](https://chainscan-galileo.0g.ai/tx/0x857e9f1234abbd35aa146adedc36e9b51fc2edf783ed288b364b4229dfa6099c) | [`0xb8f858d…`](https://chainscan-galileo.0g.ai/tx/0xb8f858d900ac66d4a5e25fa00ed41f7d6bca0b0e228ef59e7afafc58e375633e) | [h4](https://chainscan-galileo.0g.ai/tx/0x9350a6fbc33d958cc78a3319c0ffe5b5059fe51a1d4d63e90136940c8489866d) · [h5](https://chainscan-galileo.0g.ai/tx/0xd2120eb6cbe7d8a99b7a6ed278d2d30fa554d6112bb11e9e8d90ccf465f00822) |
+| 2 | 04-28 12:45 | `wallet_drained` | h1 (aave_deposit) | killed → resurrected | [`0x98c068d…`](https://chainscan-galileo.0g.ai/tx/0x98c068d469c9929ebad399aa8e4d5663b3008a44ed93458edfa6d33ff5b6edf2) | [`0x808b6ee…`](https://chainscan-galileo.0g.ai/tx/0x808b6ee22dfbcb4f8fd64a56d0ff064ee4f7f134eb1f9df462cc272d0d95ea17) | [`0xb6dfa3b…`](https://chainscan-galileo.0g.ai/tx/0xb6dfa3ba4ce6858a4a6416dfe3582b77073a4e9bdf4aa069af519bc3a0dbf56b) | [h8](https://chainscan-galileo.0g.ai/tx/0x4fc4eb26a827b3f8e80f3de430548ff4cac9419692f85e530c742ae0646981db) · [h9](https://chainscan-galileo.0g.ai/tx/0xb2e8ac840aac23bf3fea787ba906cde64c33ccfbc504591a97ff7f6677bccbff) |
 
-After resurrection: 4 heads alive (2 originals + 2 gen-1 children), AUM
-0.004 OG, valueProtectedWei 0.001 OG (head-2's position survived its EOA),
-1 scar inherited swarm-wide.
+The "Outcome" column will read `killed → resurrected` until scar-enforced
+defense ships (planned D7) — after which a second attack of a cause already
+in the swarm's scar registry should read `defended (scar from #N)` instead of
+re-resurrecting. Per-attack journalctl traces under [`docs/attacks/`](./docs/attacks/).
 
 ---
 
