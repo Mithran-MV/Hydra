@@ -197,7 +197,7 @@ Each `HydraScars` token's `tokenURI` returns on-chain JSON describing the cause 
 | Sponsor | Role | Code |
 |---|---|---|
 | **Gensyn AXL** | P2P signed messaging across 3 separate Go nodes — heartbeat, suspect, confirmed, scar, born, panic | `agents/src/axl/`, `configs/h*.json` |
-| **0G** | Storage (head state + global scars), Compute (TEE inference per resurrection), Chain (4 deployed contracts) | `agents/src/memory/`, `contracts/contracts/`, `agents/src/execution/chain.ts` |
+| **0G** | Storage (head state + global scars), Compute (TEE inference per resurrection), Chain (4 deployed contracts). Submitting to **both** 0G tracks: *Best Autonomous Agents, Swarms & iNFT Innovations* and *Best Agent Framework, Tooling & Core Extensions*. | `agents/src/memory/`, `contracts/contracts/`, `agents/src/execution/chain.ts` |
 | **KeeperHub** | Workflow orchestration (webhook trigger on confirmed death) + audit run history | `agents/src/execution/keeperhub.ts`, KH workflow `lcyuk85gh46defy5xaq8b` |
 
 Each sponsor is load-bearing: without AXL the anti-fragility is centralized; without 0G death means amnesia; without KeeperHub the redistribution lacks an auditable third-party trail.

@@ -57,7 +57,7 @@ The death detection pipeline collapses to a polled center (one process watching 
 
 ## 2. 0G · Storage + Compute + Chain
 
-**Prize criterion:** *"Best Autonomous Agents, Swarms & iNFT — contracts deployed, swarm coordination explained."*
+**Prize criterion:** *"Best Autonomous Agents, Swarms & iNFT Innovations"* (Track 2). HYDRA also fits Track 1 (*"Best Agent Framework, Tooling & Core Extensions"*) since the swarm orchestrator is reusable infrastructure, not just one product. Per ETHGlobal's submission rules, picking 0G consumes one of the 3 partner-prize slots regardless of how many of 0G's tracks the project applies to.
 
 ### Three integrations, three outcomes
 
