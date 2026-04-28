@@ -95,12 +95,54 @@ export function CTA() {
           </a>
         </div>
 
-        <div className="cta-line mt-16 flex items-center justify-center gap-4 font-mono text-[0.7rem] tracking-[0.3em] uppercase text-neutral-500">
-          <span>KeeperHub</span>
-          <span className="text-venom-400">✦</span>
-          <span>Gensyn AXL</span>
-          <span className="text-venom-400">✦</span>
-          <span>0G</span>
+        <div className="cta-line mt-16">
+          <div className="text-[0.65rem] tracking-[0.35em] uppercase text-neutral-500 font-mono mb-4">
+            Sponsors · load-bearing on all three
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+            <a
+              href="https://keeperhub.com"
+              target="_blank"
+              rel="noreferrer"
+              className="group flex items-center gap-2 transition-colors"
+              aria-label="KeeperHub (opens in new tab)"
+            >
+              <span className="font-display text-lg md:text-xl tracking-[0.18em] uppercase text-neutral-200 group-hover:text-venom-300 transition-colors">
+                KeeperHub
+              </span>
+            </a>
+            <span className="text-venom-400/60" aria-hidden="true">
+              ✦
+            </span>
+            <a
+              href="https://gensyn.ai"
+              target="_blank"
+              rel="noreferrer"
+              className="group flex items-center gap-2 transition-colors"
+              aria-label="Gensyn AXL (opens in new tab)"
+            >
+              <span className="font-display text-lg md:text-xl tracking-[0.18em] uppercase text-neutral-200 group-hover:text-venom-300 transition-colors">
+                Gensyn AXL
+              </span>
+            </a>
+            <span className="text-venom-400/60" aria-hidden="true">
+              ✦
+            </span>
+            <a
+              href="https://0g.ai"
+              target="_blank"
+              rel="noreferrer"
+              className="group flex items-center gap-2 transition-colors"
+              aria-label="0G (opens in new tab)"
+            >
+              <span className="font-display text-lg md:text-xl tracking-[0.18em] uppercase text-neutral-200 group-hover:text-venom-300 transition-colors">
+                0G
+              </span>
+            </a>
+          </div>
+          <p className="mt-4 text-[0.7rem] text-neutral-500 font-mono tracking-[0.2em] uppercase">
+            Drop one and the architecture collapses.
+          </p>
         </div>
       </div>
 
