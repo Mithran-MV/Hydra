@@ -29,7 +29,7 @@ import {
   depositToTreasury,
 } from "./execution/chain";
 import { ask as askOgCompute } from "./memory/og-compute";
-import { executeWorkflow, notifyScarLearned } from "./execution/keeperhub";
+import { executeWorkflow } from "./execution/keeperhub";
 import { emitEvent } from "./events";
 import { log } from "./util/log";
 import type {
@@ -204,16 +204,21 @@ async function main() {
       scarRegistry.add(newScar);
       await persistGlobalScar(newScar);
       await broadcastScar(identity, axl, mesh, newScar);
-      // KH workflow #3 — scar-learned audit fires every time the swarm learns
-      void notifyScarLearned(
+      // KH workflow — scar-mint audit fires every time the swarm learns
+      const scarWorkflowId =
+        process.env.HYDRA_KH_SCAR_WORKFLOW_ID ?? "up22dre1y0frp1pskrbuj";
+      void executeWorkflow(
+        scarWorkflowId,
         {
+          kind: "scar-mint",
           cause,
           rule: newScar.rule,
           learnedFrom: target,
           generation: newScar.generation,
           ts: newScar.learnedAt,
+          authorityPeerId: identity.id,
         },
-        identity.id,
+        "scar-mint",
       );
     }
     // 2. Spawn 2 children + broadcast resurrect message (in-memory work)
