@@ -2,6 +2,7 @@ import { SmoothScroll } from "@/components/SmoothScroll";
 import { Navbar } from "@/components/ui/Navbar";
 import { Cursor } from "@/components/ui/Cursor";
 import { Hero } from "@/components/sections/Hero";
+import { SponsorCallout } from "@/components/sections/SponsorCallout";
 import { Marquee } from "@/components/sections/Marquee";
 import { LiveAttacks } from "@/components/sections/LiveAttacks";
 import { LazySection } from "@/components/LazySection";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <Navbar />
       <main className="relative">
         <Hero />
+        <SponsorCallout />
         <Marquee />
         <LiveAttacks />
         <LazySection fallbackHeight="100vh">
