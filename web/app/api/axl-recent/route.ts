@@ -20,21 +20,57 @@ interface AxlEvent {
 interface AxlSnapshot {
   refreshedAt: number;
   lastMinuteCount: number;
+  earliestTs: number | null;
+  /** Total messages observed of each kind across the entire events.jsonl,
+   *  not just within the returned slice. Lets the UI label sub-sections
+   *  with cumulative counts even when only a window of 50 is rendered. */
+  totals: {
+    lifecycle: number;
+    heartbeat: number;
+  };
   events: AxlEvent[];
 }
 
-const MAX = 50;
+const LIFECYCLE_TYPES = new Set([
+  "suspect",
+  "confirmed",
+  "resurrect",
+  "born",
+  "scar",
+  "panic",
+]);
+const HEARTBEAT_TYPES = new Set(["heartbeat"]);
 
-export async function GET() {
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 200;
+
+function pickFilter(types: string | null): Set<string> | null {
+  if (types === "lifecycle") return LIFECYCLE_TYPES;
+  if (types === "heartbeat") return HEARTBEAT_TYPES;
+  return null; // "all" or omitted — no filter
+}
+
+export async function GET(req: Request) {
   const refreshedAt = Date.now();
+  const url = new URL(req.url);
+  const filter = pickFilter(url.searchParams.get("types"));
+  const limit = Math.min(
+    MAX_LIMIT,
+    Math.max(1, Number(url.searchParams.get("limit") ?? DEFAULT_LIMIT)),
+  );
+
   const events: AxlEvent[] = [];
+  let lifecycleTotal = 0;
+  let heartbeatTotal = 0;
 
   if (existsSync(EVENTS_FILE)) {
     try {
       const raw = await readFile(EVENTS_FILE, "utf8");
-      const lines = raw.split("\n").filter(Boolean);
-      // Walk backwards so we don't allocate a huge array for the whole log
-      for (let i = lines.length - 1; i >= 0 && events.length < MAX * 4; i--) {
+      const lines = raw.split("\n");
+      // Walk backwards so events come out newest-first.
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (!line) continue;
         let e: {
           ts: number;
           headId: string;
@@ -42,30 +78,40 @@ export async function GET() {
           payload: Record<string, unknown>;
         };
         try {
-          e = JSON.parse(lines[i]);
+          e = JSON.parse(line);
         } catch {
           continue;
         }
         if (e.type !== "axl.recv") continue;
-        events.push({
-          ts: e.ts,
-          headId: e.headId.slice(0, 10),
-          msgType: String(e.payload.type ?? "?"),
-          from: String(e.payload.from ?? "?"),
-        });
+        const inner = String(e.payload.type ?? "?");
+        if (LIFECYCLE_TYPES.has(inner)) lifecycleTotal++;
+        if (HEARTBEAT_TYPES.has(inner)) heartbeatTotal++;
+        if (filter && !filter.has(inner)) continue;
+        if (events.length < limit) {
+          events.push({
+            ts: e.ts,
+            headId: e.headId.slice(0, 10),
+            msgType: inner,
+            from: String(e.payload.from ?? "?"),
+          });
+        }
       }
     } catch {}
   }
 
-  // newest first already (we walked backwards), trim to MAX
-  const trimmed = events.slice(0, MAX);
   const cutoff = refreshedAt - 60_000;
   const lastMinuteCount = events.filter((e) => e.ts > cutoff).length;
+  const earliestTs = events.length > 0 ? events[events.length - 1].ts : null;
 
   const snap: AxlSnapshot = {
     refreshedAt,
     lastMinuteCount,
-    events: trimmed,
+    earliestTs,
+    totals: {
+      lifecycle: lifecycleTotal,
+      heartbeat: heartbeatTotal,
+    },
+    events,
   };
 
   return Response.json(snap, {
