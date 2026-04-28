@@ -71,22 +71,37 @@ fi
 
 sleep 0.3
 
-# Step 3: SIGTERM the Node head process (diagnostics handler also sends panic)
-echo "→ SIGTERM head-$HEAD_INDEX pid=$HEAD_PID"
-kill -TERM "$HEAD_PID" 2>/dev/null || true
-sleep 0.5
-
-# Step 4: confirm dead, hard-kill if needed
-if kill -0 "$HEAD_PID" 2>/dev/null; then
-  echo "  still alive, SIGKILL"
-  kill -KILL "$HEAD_PID" 2>/dev/null || true
+# Step 3: stop the head. If a systemd unit manages this head, use
+# `systemctl stop` so the unit's Restart=always doesn't immediately
+# bring it back before consensus reaches quorum (15s). On the dev
+# laptop where heads are bare tsx procs, fall back to PID-kill.
+SYSTEMD_UNIT="hydra-head${HEAD_INDEX}.service"
+if command -v systemctl >/dev/null 2>&1 \
+   && systemctl list-unit-files "$SYSTEMD_UNIT" --no-legend 2>/dev/null | grep -q "$SYSTEMD_UNIT"; then
+  echo "→ systemctl stop $SYSTEMD_UNIT (disables auto-restart)"
+  systemctl stop "$SYSTEMD_UNIT" 2>/dev/null || true
+else
+  echo "→ SIGTERM head-$HEAD_INDEX pid=$HEAD_PID"
+  kill -TERM "$HEAD_PID" 2>/dev/null || true
+  sleep 0.5
+  if kill -0 "$HEAD_PID" 2>/dev/null; then
+    echo "  still alive, SIGKILL"
+    kill -KILL "$HEAD_PID" 2>/dev/null || true
+  fi
 fi
 
-# Optionally also stop the AXL node sidecar (so /recv doesn't keep returning)
-AXL_PID=$(pgrep -f "configs/h${HEAD_INDEX}.json" || echo "")
-if [ -n "$AXL_PID" ]; then
-  echo "→ stopping AXL sidecar pid=$AXL_PID"
-  kill -TERM "$AXL_PID" 2>/dev/null || true
+# Optionally also stop the AXL node sidecar so /recv doesn't keep returning.
+# Same systemd-vs-PID logic: prefer the unit if present.
+AXL_UNIT="hydra-axl@${HEAD_INDEX}.service"
+if systemctl list-unit-files "$AXL_UNIT" --no-legend 2>/dev/null | grep -q "$AXL_UNIT"; then
+  echo "→ systemctl stop $AXL_UNIT"
+  systemctl stop "$AXL_UNIT" 2>/dev/null || true
+else
+  AXL_PID=$(pgrep -f "configs/h${HEAD_INDEX}.json" || echo "")
+  if [ -n "$AXL_PID" ]; then
+    echo "→ stopping AXL sidecar pid=$AXL_PID"
+    kill -TERM "$AXL_PID" 2>/dev/null || true
+  fi
 fi
 
 rm -f "$PID_FILE"
