@@ -506,33 +506,30 @@ interface AxlEvent {
 interface AxlSnapshot {
   refreshedAt: number;
   lastMinuteCount: number;
+  earliestTs: number | null;
+  totals: { lifecycle: number; heartbeat: number };
   events: AxlEvent[];
 }
 
-const AXL_FILTER_TYPES = [
-  "heartbeat",
-  "suspect",
-  "confirmed",
-  "resurrect",
-  "born",
-  "scar",
-  "panic",
-] as const;
-
 function AxlStreamCard() {
-  const [snap, setSnap] = useState<AxlSnapshot | null>(null);
-  const [active, setActive] = useState<Set<string>>(new Set(AXL_FILTER_TYPES));
+  const [lifecycle, setLifecycle] = useState<AxlSnapshot | null>(null);
+  const [heartbeat, setHeartbeat] = useState<AxlSnapshot | null>(null);
+  const [showHeartbeats, setShowHeartbeats] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Always poll lifecycle events. They're rare (~7 per attack) so an 8s
+  // cadence is plenty — the API does a full-file scan to find them.
   useEffect(() => {
     let cancelled = false;
     const fetchOnce = async () => {
       try {
-        const r = await fetch("/api/axl-recent", { cache: "no-store" });
+        const r = await fetch("/api/axl-recent?types=lifecycle&limit=50", {
+          cache: "no-store",
+        });
         if (!r.ok) throw new Error("HTTP " + r.status);
         const data = (await r.json()) as AxlSnapshot;
         if (!cancelled) {
-          setSnap(data);
+          setLifecycle(data);
           setError(null);
         }
       } catch (e) {
@@ -540,25 +537,34 @@ function AxlStreamCard() {
       }
     };
     void fetchOnce();
-    const i = setInterval(() => void fetchOnce(), 4_000);
+    const i = setInterval(() => void fetchOnce(), 8_000);
     return () => {
       cancelled = true;
       clearInterval(i);
     };
   }, []);
 
-  const toggleFilter = (t: string) => {
-    setActive((prev) => {
-      const n = new Set(prev);
-      if (n.has(t)) n.delete(t);
-      else n.add(t);
-      return n;
-    });
-  };
-
-  const filtered = snap
-    ? snap.events.filter((e) => active.has(e.msgType))
-    : [];
+  // Only poll heartbeats while the sub-section is expanded.
+  useEffect(() => {
+    if (!showHeartbeats) return;
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const r = await fetch("/api/axl-recent?types=heartbeat&limit=50", {
+          cache: "no-store",
+        });
+        if (!r.ok) return;
+        const data = (await r.json()) as AxlSnapshot;
+        if (!cancelled) setHeartbeat(data);
+      } catch {}
+    };
+    void fetchOnce();
+    const i = setInterval(() => void fetchOnce(), 4_000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
+  }, [showHeartbeats]);
 
   return (
     <EvidenceCard
@@ -569,52 +575,26 @@ function AxlStreamCard() {
         text: "gensyn-ai/axl",
       }}
     >
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {AXL_FILTER_TYPES.map((t) => {
-          const on = active.has(t);
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => toggleFilter(t)}
-              className={`px-2 py-1 rounded font-mono text-[0.65rem] tracking-[0.2em] uppercase border transition-colors ${
-                on
-                  ? "border-venom-400/60 text-venom-300 bg-venom-500/10"
-                  : "border-ink-700 text-neutral-500 hover:text-neutral-300"
-              }`}
-            >
-              {t}
-            </button>
-          );
-        })}
-        <span className="ml-auto text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono">
-          {snap ? `${snap.lastMinuteCount} msgs in 60s` : "—"}
+      {/* 4a — Lifecycle events, default visible */}
+      <div className="mb-2 flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="font-mono text-[0.7rem] tracking-[0.3em] uppercase text-venom-300/85">
+          Lifecycle events
+        </h3>
+        <span className="font-mono text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500">
+          {lifecycle
+            ? `${lifecycle.events.length} shown · ${lifecycle.totals.lifecycle} total · spans ${lifecycleSpan(lifecycle)}`
+            : "—"}
         </span>
       </div>
-      {snap ? (
-        filtered.length === 0 ? (
-          <Placeholder note="no AXL messages match the active filter — toggle a chip" />
+      {lifecycle ? (
+        lifecycle.events.length === 0 ? (
+          <Placeholder note="no lifecycle events recorded yet — fires on next attack" />
         ) : (
           <div className="max-h-72 overflow-y-auto rounded border border-ink-700/60 bg-ink-950/40">
             <table className="w-full text-xs font-mono">
               <tbody>
-                {filtered.map((e, i) => (
-                  <tr
-                    key={`${e.ts}-${i}`}
-                    className="border-b border-ink-800/40 last:border-0"
-                  >
-                    <td className="px-2 py-1.5 text-neutral-500 whitespace-nowrap w-20">
-                      {timeAgo(e.ts)}
-                    </td>
-                    <td className="px-2 py-1.5 w-24">
-                      <span className="text-venom-300">{e.msgType}</span>
-                    </td>
-                    <td className="px-2 py-1.5 text-neutral-400">
-                      {e.headId}…
-                    </td>
-                    <td className="px-2 py-1.5 text-neutral-500">←</td>
-                    <td className="px-2 py-1.5 text-neutral-300">{e.from}</td>
-                  </tr>
+                {lifecycle.events.map((e, i) => (
+                  <AxlRow key={`${e.ts}-${i}`} event={e} />
                 ))}
               </tbody>
             </table>
@@ -623,10 +603,77 @@ function AxlStreamCard() {
       ) : error ? (
         <Placeholder note={`fetch failed: ${error}`} />
       ) : (
-        <Placeholder note="reading from logs/events.jsonl…" />
+        <Placeholder note="reading lifecycle events from logs/events.jsonl…" />
       )}
+
+      {/* 4b — Heartbeat stream, collapsed */}
+      <div className="mt-5 pt-4 border-t border-ink-800/60">
+        <button
+          type="button"
+          onClick={() => setShowHeartbeats((v) => !v)}
+          className="w-full flex items-center justify-between gap-3 px-2 py-2 rounded border border-ink-700/60 hover:border-neutral-500 transition-colors text-left"
+        >
+          <span className="font-mono text-[0.7rem] tracking-[0.3em] uppercase text-neutral-400">
+            {showHeartbeats ? "Hide heartbeat stream" : "Show heartbeat stream"}
+          </span>
+          <span className="font-mono text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500">
+            {lifecycle
+              ? `${lifecycle.totals.heartbeat.toLocaleString()} total since deploy`
+              : "—"}
+          </span>
+        </button>
+        {showHeartbeats ? (
+          heartbeat ? (
+            <div className="mt-3">
+              <div className="font-mono text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 mb-2">
+                {heartbeat.lastMinuteCount} heartbeats in last 60s ·
+                {" "}
+                {heartbeat.events.length} shown
+              </div>
+              <div className="max-h-56 overflow-y-auto rounded border border-ink-700/60 bg-ink-950/40">
+                <table className="w-full text-xs font-mono">
+                  <tbody>
+                    {heartbeat.events.map((e, i) => (
+                      <AxlRow key={`${e.ts}-${i}`} event={e} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <Placeholder note="loading heartbeats…" />
+            </div>
+          )
+        ) : null}
+      </div>
     </EvidenceCard>
   );
+}
+
+function AxlRow({ event: e }: { event: AxlEvent }) {
+  return (
+    <tr className="border-b border-ink-800/40 last:border-0">
+      <td className="px-2 py-1.5 text-neutral-500 whitespace-nowrap w-20">
+        {timeAgo(e.ts)}
+      </td>
+      <td className="px-2 py-1.5 w-24">
+        <span className="text-venom-300">{e.msgType}</span>
+      </td>
+      <td className="px-2 py-1.5 text-neutral-400">{e.headId}…</td>
+      <td className="px-2 py-1.5 text-neutral-500">←</td>
+      <td className="px-2 py-1.5 text-neutral-300">{e.from}</td>
+    </tr>
+  );
+}
+
+function lifecycleSpan(s: AxlSnapshot): string {
+  if (!s.earliestTs) return "—";
+  const minutes = Math.max(1, Math.floor((s.refreshedAt - s.earliestTs) / 60000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remMin = minutes % 60;
+  return remMin === 0 ? `${hours}h` : `${hours}h ${remMin}m`;
 }
 
 interface HeadStateEntry {
