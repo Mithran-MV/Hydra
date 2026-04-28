@@ -39,7 +39,8 @@ Agent operators get bounded downtime + cumulative immunity. Treasuries don't get
 | HydraRegistry  | [`0xc9dba9030dc15a2aa5d020cb4009ebfffc508ba3`](https://chainscan-galileo.0g.ai/address/0xc9dba9030dc15a2aa5d020cb4009ebfffc508ba3) |
 | HydraTreasury  | [`0xda181fdfd86965e83cddb9193734ed3e7c879171`](https://chainscan-galileo.0g.ai/address/0xda181fdfd86965e83cddb9193734ed3e7c879171) |
 | HydraExecutor  | [`0x1d5059499088ae2dcf77652562dd08f468a46a39`](https://chainscan-galileo.0g.ai/address/0x1d5059499088ae2dcf77652562dd08f468a46a39) |
-| HydraScars (iNFT) | [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320) |
+| HydraScars (iNFT, v2 ERC-721) | [`0x838083ff1334ccc68400d1576f59282d32320dbe`](https://chainscan-galileo.0g.ai/token/0x838083ff1334ccc68400d1576f59282d32320dbe) |
+| HydraScars (iNFT, v1 historical) | [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320) |
 
 Deployer: [`0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7`](https://chainscan-galileo.0g.ai/address/0x7CDbb447D2a604bceF944e16ab6B9515601c6dB7)
 
@@ -51,39 +52,61 @@ or IPFS pointer — so the "intelligence" of the swarm is verifiable directly
 from the chain. Anyone can fetch a scar, read the rule, and inherit the
 swarm's hard-earned lessons.
 
-> **Standard disclosure.** `HydraScars` implements a minimal NFT surface
-> (`name` / `symbol` / `ownerOf` / `tokenURI` + `Transfer` event) but does
-> not yet conform to ERC-7857 (0G's iNFT standard) or full ERC-721 + ERC-165.
-> Tracking ERC-7857 compliance as a v2 build step.
+> **Standard disclosure.** `HydraScars` is implemented as full
+> **ERC-721 + ERC-165 + ERC-721Metadata** with embedded scar memory in
+> `mapping(uint256 => string) public ruleOf`. The `tokenURI` function
+> returns a `data:application/json;base64,…` URI so chain explorers
+> render the NFT card with the rule visible in the metadata pane.
+> Standard upgrade to ERC-7857 (0G's iNFT spec) is deferred as a v2 build
+> step — see [SPONSORS.md](./SPONSORS.md) for rationale.
 
-### Minted iNFTs (HydraScars · chain 16602)
+### Minted iNFTs (HydraScars v2 · chain 16602)
 
-Five tokens minted to date. Cause + rule are stored in contract mappings
-(`causeOf[tokenId]` and `ruleOf[tokenId]`) and surfaced through `tokenURI`
-as inline JSON. Click any "Mint tx" link to verify the mint event and the
+Production scars live on the v2 contract at
+[`0x838083ff…`](https://chainscan-galileo.0g.ai/token/0x838083ff1334ccc68400d1576f59282d32320dbe)
+(full ERC-721 surface, ERC-165 detectable). Cause + rule + outcome are
+stored in contract mappings (`causeOf[tokenId]`, `ruleOf[tokenId]`,
+`outcomeOf[tokenId]`) and surfaced through `tokenURI` as a base64-encoded
+data URI. Click any "Mint tx" link to verify the mint event and the
 embedded rule on chainscan-galileo.
 
 | Token | Cause | Rule (embedded in `ruleOf[id]`, returned by `tokenURI`) | Owner | Mint tx |
 |---|---|---|---|---|
-| #1 | `api_timeout` | "fall back to secondary RPC after 2 consecutive failures" | h1 wallet | [`0x07c7a7c…`](https://chainscan-galileo.0g.ai/tx/0x07c7a7c15609ecf1e06b10a3b954c4b69a2ccac9d0d6a2ada00b5a38ba4b55af) |
-| #2 | `api_timeout` | (duplicate cause — pre-cadence dev mint) | h1 wallet | (pre-cadence) |
-| #3 | `api_timeout` | (duplicate cause — pre-cadence dev mint) | h1 wallet | (pre-cadence) |
-| #4 | `process_killed` | "shorter checkpoint interval + supervisord respawn" | h1 wallet | [`0xb8f858d…`](https://chainscan-galileo.0g.ai/tx/0xb8f858d900ac66d4a5e25fa00ed41f7d6bca0b0e228ef59e7afafc58e375633e) |
-| #5 | `wallet_drained` | "halt strategy + require multi-sig approval for next action" | h3 wallet | [`0xb6dfa3b…`](https://chainscan-galileo.0g.ai/tx/0xb6dfa3ba4ce6858a4a6416dfe3582b77073a4e9bdf4aa069af519bc3a0dbf56b) |
+| #1 | `process_killed` | "shorter checkpoint interval + supervisord respawn" | h1 wallet | [`0x26d45f5a…`](https://chainscan-galileo.0g.ai/tx/0x26d45f5a98e8fe77470a90d0a727617e543a4586723c6e5ff58ee0c82e19d926) |
+| #2 | `wallet_drained` | "halt strategy + require multi-sig approval for next action" | h3 wallet | [`0x995f2c88…`](https://chainscan-galileo.0g.ai/tx/0x995f2c88072ec25b74b7cb940d4553a3145400552a0ee9ccfe9928adb436e94f) |
 
-Sample on-chain `tokenURI(5)` (the `wallet_drained` scar from attack #2):
+Sample decoded `tokenURI(2)` (the `wallet_drained` scar from attack #2,
+base64-decoded for readability):
 
 ```json
-{"name":"Scar #5","cause":"77616c6c65745f647261696e6564000000000000000000000000000000000000","rule":"halt strategy + require multi-sig approval for next action"}
+{
+  "name": "Scar #2",
+  "description": "A defense rule the HYDRA swarm has learned. Each scar is minted on the death of an agent and inherited by every survivor and future spawn - the swarm gets stronger every time it is attacked.",
+  "cause": "77616c6c65745f647261696e6564000000000000000000000000000000000000",
+  "rule": "halt strategy + require multi-sig approval for next action",
+  "attributes": [
+    { "trait_type": "cause", "value": "wallet_drained" },
+    { "trait_type": "scar_id", "value": 2 },
+    { "trait_type": "outcome", "value": "resurrected" }
+  ]
+}
 ```
 
-The `cause` field is the bytes32-padded hex of the death-cause string
-("wallet_drained"). The `rule` field is the literal mitigation the swarm
-inherits when it sees this scar.
+`outcome` defaults to `"resurrected"` and is mutable via `setOutcome` once
+scar-enforced defense ships (D7 build task) — at which point a second
+attack of an already-known cause flips the value to `"defended"`.
 
-The collection contract: [`0x03210f64072ceb1040dbdd37b32e7b0caeeae320`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320).
-New tokens mint per attack per the cadence in
+New scars mint to this contract per attack per the cadence in
 [`docs/planning/DAILY_ATTACK_CADENCE.md`](./docs/planning/DAILY_ATTACK_CADENCE.md).
+
+#### Historical scars (v1 contract)
+
+The earlier `HydraScars` deploy at
+[`0x03210f64…`](https://chainscan-galileo.0g.ai/token/0x03210f64072ceb1040dbdd37b32e7b0caeeae320)
+holds five tokens minted under the loose-721 surface (no ERC-165, plain
+JSON tokenURI). Tokens #4 and #5 there correspond to the two production
+attacks above and were re-minted on v2 with proper ERC-721 metadata;
+tokens #1–#3 stay on v1 as pre-cadence dev artifacts.
 
 ### Live attacks captured
 
