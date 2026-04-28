@@ -1,0 +1,21 @@
+[Unit]
+Description=HYDRA head 1 (aave_deposit)
+After=hydra-axl@1.service network-online.target
+Wants=hydra-axl@1.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/hydra
+EnvironmentFile=/var/www/hydra/.env
+Environment=HEAD_INDEX=1
+Environment=HEAD_STRATEGY=aave_deposit
+Environment=NODE_ENV=production
+ExecStart=/var/www/hydra/node_modules/.bin/tsx /var/www/hydra/agents/src/head.ts
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/www/hydra/logs/head-h1.log
+StandardError=append:/var/www/hydra/logs/head-h1.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+[Unit]
+Description=HYDRA head 2 (univ4_lp)
+After=hydra-axl@2.service network-online.target
+Wants=hydra-axl@2.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/hydra
+EnvironmentFile=/var/www/hydra/.env
+Environment=HEAD_INDEX=2
+Environment=HEAD_STRATEGY=univ4_lp
+Environment=NODE_ENV=production
+ExecStart=/var/www/hydra/node_modules/.bin/tsx /var/www/hydra/agents/src/head.ts
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/www/hydra/logs/head-h2.log
+StandardError=append:/var/www/hydra/logs/head-h2.log
+
+[Install]
+WantedBy=multi-user.target

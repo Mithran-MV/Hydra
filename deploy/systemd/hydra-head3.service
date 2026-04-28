@@ -1,0 +1,21 @@
+[Unit]
+Description=HYDRA head 3 (payroll)
+After=hydra-axl@3.service network-online.target
+Wants=hydra-axl@3.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/hydra
+EnvironmentFile=/var/www/hydra/.env
+Environment=HEAD_INDEX=3
+Environment=HEAD_STRATEGY=payroll
+Environment=NODE_ENV=production
+ExecStart=/var/www/hydra/node_modules/.bin/tsx /var/www/hydra/agents/src/head.ts
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/www/hydra/logs/head-h3.log
+StandardError=append:/var/www/hydra/logs/head-h3.log
+
+[Install]
+WantedBy=multi-user.target

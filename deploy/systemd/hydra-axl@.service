@@ -1,0 +1,17 @@
+[Unit]
+Description=HYDRA AXL node h%i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/hydra
+ExecStart=/var/www/hydra/axl/bin/axl-node -config /var/www/hydra/configs/h%i.json
+Restart=always
+RestartSec=2
+StandardOutput=append:/var/www/hydra/logs/axl-h%i.log
+StandardError=append:/var/www/hydra/logs/axl-h%i.log
+
+[Install]
+WantedBy=multi-user.target

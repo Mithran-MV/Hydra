@@ -1,0 +1,19 @@
+[Unit]
+Description=HYDRA web dashboard
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/hydra/web
+EnvironmentFile=/var/www/hydra/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/var/www/hydra/node_modules/.bin/next start -p 3000
+Restart=always
+RestartSec=2
+StandardOutput=append:/var/www/hydra/logs/web.log
+StandardError=append:/var/www/hydra/logs/web.log
+
+[Install]
+WantedBy=multi-user.target
