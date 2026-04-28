@@ -204,8 +204,8 @@ export default function DashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4">
-      <div className="text-xs uppercase tracking-widest text-neutral-500">
+    <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4 transition-all duration-200 hover:border-venom-500/60 hover:bg-ink-900/70 hover:shadow-[0_0_24px_-4px_rgba(55,255,158,0.35)] cursor-default">
+      <div className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-neutral-500">
         {label}
       </div>
       <div className="text-2xl font-display mt-1 tabular-nums text-venom-300">
