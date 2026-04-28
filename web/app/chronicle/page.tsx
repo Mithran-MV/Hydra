@@ -47,11 +47,11 @@ function Header() {
             ← HYDRA
           </Link>
           <h1 className="font-display text-3xl md:text-4xl tracking-tight text-neutral-50 mt-2">
-            Evidence
+            The Chronicle
           </h1>
           <p className="text-sm md:text-base text-neutral-400 mt-1 max-w-2xl">
-            Every claim HYDRA makes, traceable to on-chain or live-system
-            evidence in under 60 seconds.
+            The complete record of HYDRA&apos;s run — every claim, traceable
+            to its source.
           </p>
         </div>
         <div className="hidden md:flex items-center gap-3">

@@ -1,5 +1,5 @@
 /** Canonical attack history shared between the landing-page LiveAttacks
- *  card and the /evidence page's full receipts table.
+ *  card and the /chronicle page's full receipts table.
  *
  *  Append a new entry per attack per `docs/planning/DAILY_ATTACK_CADENCE.md`.
  *  Each entry's tx hashes are immutable on-chain; never edit a row except to

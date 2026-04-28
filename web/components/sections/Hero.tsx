@@ -195,11 +195,11 @@ export function Hero() {
                   </svg>
                 </Link>
                 <Link
-                  href="/evidence"
+                  href="/chronicle"
                   className="hero-cta mythic-btn-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-venom-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
-                  aria-label="Verify HYDRA's claims with on-chain and live-system evidence"
+                  aria-label="Read the Chronicle — HYDRA's complete run record traceable to source"
                 >
-                  Verify the evidence →
+                  Read the Chronicle →
                 </Link>
                 <a
                   href="https://github.com/Mithran-MV/Hydra"
