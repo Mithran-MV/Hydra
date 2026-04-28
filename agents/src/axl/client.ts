@@ -1,5 +1,6 @@
 import { request } from "undici";
 import type { AXLMessage, AxlEnvelope } from "../../../shared/types";
+import { emitEvent } from "../events";
 import { log } from "../util/log";
 
 const POLL_INTERVAL_MS = 250;
@@ -58,6 +59,12 @@ export class AXLClient {
 
   async send(toPeerId: string, message: AXLMessage): Promise<void> {
     const body = JSON.stringify(message);
+    void emitEvent(this.peerId ?? "unknown", "axl.send", {
+      type: message.type,
+      to: toPeerId.slice(0, 16) + "…",
+      sigPresent: "sig" in message && typeof message.sig === "string",
+      bytes: body.length,
+    });
     try {
       const r = await request(`${this.apiBase}/send`, {
         method: "POST",
