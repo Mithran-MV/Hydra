@@ -1,6 +1,6 @@
 # AI usage disclosure
 
-Per ETHGlobal's policy, hackathon projects must disclose AI assistance. HYDRA was built by Mithran M.V. (solo) using **Claude Code** (Anthropic) as a coding co-pilot during the Apr 24 – May 6 2026 window. No pre-existing code was used.
+Per ETHGlobal's policy, hackathon projects must disclose AI assistance. HYDRA was built by a 3-person team — Mithran M.V., Kamalesh T, and Fabio Mughilan — using **Claude Code** (Anthropic) as a coding co-pilot during the Apr 24 – May 3 2026 build window (ETHGlobal Open Agents). No pre-existing code was used.
 
 ## What Claude was used for
 
