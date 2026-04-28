@@ -113,7 +113,7 @@ tokens #1–#3 stay on v1 as pre-cadence dev artifacts.
 The swarm at `hydra.hacklabs.in` runs continuously. Every row below is a real
 attack against the live deployment, captured with five on-chain proofs that
 anyone can verify on chainscan-galileo. The table grows by one row per attack
-through D11 (May 4) per the daily cadence in `docs/planning/DAILY_ATTACK_CADENCE.md`.
+through D9 (May 2) per the daily cadence in `docs/planning/DAILY_ATTACK_CADENCE.md` (submission morning is D10 / May 3).
 For current swarm state see the [live dashboard](https://hydra.hacklabs.in/dashboard).
 
 | # | UTC | Cause | Target | Outcome | Death | Scar | iNFT | Born ×2 |
@@ -374,7 +374,7 @@ hydra/
 | Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra |
 | Demo video < 3 min | 🟡 | recorded Day 11 — link goes here |
 | Agent coordination explained | ✅ | "How it works" section above |
-| Built during hackathon (Apr 24 – May 6, 2026) | ✅ | git history shows incremental commits per day |
+| Built during hackathon (Apr 24 – May 3, 2026) | ✅ | git history shows incremental commits per day |
 
 ---
 
