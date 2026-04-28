@@ -111,7 +111,18 @@ export function startConsensus(
     const rec = suspects.get(target);
     if (!rec) return;
 
-    const live = ctx.mesh.livePeers().filter((p) => p.id !== target);
+    // Only count peers we've actually heard from recently. Mesh.livePeers
+    // returns every non-dead peer — including ones loaded from keys/*.pem
+    // at boot with lastSeen=0 (never heartbeated). Including those ghost
+    // peers inflates the quorum threshold so a single witness can never
+    // confirm a death even though the absent ghosts are themselves silent.
+    const now = Date.now();
+    const live = ctx.mesh.livePeers().filter(
+      (p) =>
+        p.id !== target &&
+        p.lastSeen > 0 &&
+        now - p.lastSeen <= SUSPECTED_AFTER_MS,
+    );
     const total = live.length + 1;
     const required = quorum(total);
 
