@@ -330,19 +330,19 @@ function LiveAttacksCard() {
 
 interface KhRun {
   ts: number;
-  kind: "notify" | "skip";
-  workflow: string;
-  cause: string;
-  status: number | null;
-  ok: boolean | null;
-  runId: string | null;
-  reason: string | null;
+  workflowId: string;
+  workflowLabel: string;
+  ok: boolean;
+  executionId: string | null;
+  status: string | null;
+  error: string | null;
+  inputSummary: Record<string, unknown>;
 }
 
 interface KhSnapshot {
   refreshedAt: number;
-  workflowId: string;
   totalRuns: number;
+  workflows: Array<{ id: string; label: string; runs: number }>;
   runs: KhRun[];
 }
 
@@ -377,21 +377,27 @@ function KeeperHubCard() {
     <EvidenceCard
       label="Codex iii · Audit"
       title="KeeperHub workflow runs"
-      source={{ href: "https://app.keeperhub.com", text: "app.keeperhub.com" }}
+      source={{ href: "https://app.keeperhub.com/workflows", text: "app.keeperhub.com" }}
     >
       {snap ? (
         <div>
-          <div className="flex items-center justify-between text-xs text-neutral-400 mb-3">
-            <div>
-              workflow id:{" "}
-              <span className="font-mono text-venom-300">{snap.workflowId}</span>
+          <div className="flex items-center justify-between text-xs text-neutral-400 mb-3 flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
+              {snap.workflows.map((w) => (
+                <span
+                  key={w.id}
+                  className="font-mono text-[0.65rem] tracking-[0.15em] uppercase border border-ink-700 rounded px-2 py-1 text-neutral-300"
+                >
+                  {w.label}: <span className="text-venom-300">{w.runs}</span>
+                </span>
+              ))}
             </div>
             <div className="font-mono text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500">
               {snap.totalRuns} total
             </div>
           </div>
           {snap.runs.length === 0 ? (
-            <Placeholder note="no KeeperHub calls observed yet — fires on every confirmed death" />
+            <Placeholder note="no KeeperHub calls observed yet — fires on every confirmed death, treasury redistribute, and scar mint" />
           ) : (
             <div className="overflow-x-auto -mx-2">
               <table className="w-full text-xs font-mono">
@@ -399,57 +405,86 @@ function KeeperHubCard() {
                   <tr>
                     <th className="px-2 py-2 font-normal">When</th>
                     <th className="px-2 py-2 font-normal">Workflow</th>
-                    <th className="px-2 py-2 font-normal">Cause</th>
                     <th className="px-2 py-2 font-normal">Status</th>
-                    <th className="px-2 py-2 font-normal">Run / reason</th>
+                    <th className="px-2 py-2 font-normal">Execution</th>
+                    <th className="px-2 py-2 font-normal">Input summary</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {snap.runs.map((r, i) => (
-                    <tr
-                      key={`${r.ts}-${i}`}
-                      className="border-b border-ink-800/60 last:border-0"
-                    >
-                      <td className="px-2 py-2 text-neutral-400 whitespace-nowrap">
-                        {timeAgo(r.ts)}
-                      </td>
-                      <td className="px-2 py-2 text-neutral-200">{r.workflow}</td>
-                      <td className="px-2 py-2 text-blood-400">{r.cause}</td>
-                      <td className="px-2 py-2">
-                        {r.kind === "skip" ? (
-                          <span className="text-ember-400">skipped</span>
-                        ) : r.ok ? (
-                          <span className="text-venom-300">
-                            {r.status} ok
-                          </span>
-                        ) : (
-                          <span className="text-blood-400">
-                            {r.status ?? "—"} fail
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-neutral-300 max-w-[200px] truncate">
-                        {r.runId ?? r.reason ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
+                  {snap.runs.map((r, i) => {
+                    const execHref =
+                      r.executionId
+                        ? `https://app.keeperhub.com/workflows/${r.workflowId}/executions/${r.executionId}`
+                        : null;
+                    return (
+                      <tr
+                        key={`${r.ts}-${i}`}
+                        className="border-b border-ink-800/60 last:border-0"
+                      >
+                        <td className="px-2 py-2 text-neutral-400 whitespace-nowrap">
+                          {timeAgo(r.ts)}
+                        </td>
+                        <td className="px-2 py-2 text-neutral-200 whitespace-nowrap">
+                          {r.workflowLabel}
+                        </td>
+                        <td className="px-2 py-2 whitespace-nowrap">
+                          {r.ok ? (
+                            <span className="text-venom-300">
+                              {r.status ?? "ok"}
+                            </span>
+                          ) : (
+                            <span className="text-blood-400">fail</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2">
+                          {execHref ? (
+                            <a
+                              href={execHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                            >
+                              {r.executionId!.slice(0, 10)}…
+                            </a>
+                          ) : (
+                            <span className="text-blood-400 text-[0.65rem]">
+                              {r.error ?? "no execution"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-neutral-400 max-w-[260px] truncate">
+                          {summarise(r.inputSummary)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
           <p className="mt-3 text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono leading-relaxed">
-            KH dashboard at app.keeperhub.com is permissioned per-org; data
-            shown here is the agent-side audit log of every KH call HYDRA has
-            made (read from logs/events.jsonl on the live host).
+            agent-side log of every KH call HYDRA has made via MCP HTTP
+            (logs/keeperhub-runs.jsonl). Cross-verify by clicking an execution
+            id; the KH dashboard is per-org permissioned.
           </p>
         </div>
       ) : error ? (
         <Placeholder note={`fetch failed: ${error}`} />
       ) : (
-        <Placeholder note="reading from logs/events.jsonl…" />
+        <Placeholder note="reading from logs/keeperhub-runs.jsonl…" />
       )}
     </EvidenceCard>
   );
+}
+
+function summarise(input: Record<string, unknown>): string {
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(input)) {
+    if (k === "kind") continue;
+    parts.push(`${k}=${typeof v === "string" ? v.slice(0, 16) : JSON.stringify(v)}`);
+    if (parts.length >= 3) break;
+  }
+  return parts.join(" · ") || "—";
 }
 
 interface AxlEvent {
