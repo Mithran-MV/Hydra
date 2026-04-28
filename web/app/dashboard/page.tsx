@@ -66,13 +66,24 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-ink-950 text-ink-50 p-6 grid grid-rows-[auto_auto_auto_1fr_auto] gap-6">
-      <nav className="flex items-center justify-between">
+      <nav className="flex items-center justify-between gap-4 flex-wrap">
         <Link
           href="/"
           className="font-display text-sm tracking-[0.4em] text-venom-400 hover:text-venom-300 transition-colors"
         >
           ← HYDRA
         </Link>
+        <div className="flex items-center gap-6 font-mono text-[0.7rem] tracking-[0.25em] uppercase">
+          <Link
+            href="/chronicle"
+            className="text-neutral-400 hover:text-venom-300 transition-colors"
+          >
+            Chronicle
+          </Link>
+          <span className="text-venom-300 border-b border-venom-400/60 pb-0.5">
+            Dashboard
+          </span>
+        </div>
         <div className="font-mono text-xs text-neutral-500">
           swarm.live · 0G galileo testnet
         </div>
