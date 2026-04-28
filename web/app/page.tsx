@@ -3,6 +3,7 @@ import { Navbar } from "@/components/ui/Navbar";
 import { Cursor } from "@/components/ui/Cursor";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
+import { LiveAttacks } from "@/components/sections/LiveAttacks";
 import { LazySection } from "@/components/LazySection";
 import { Fragile } from "@/components/sections/Fragile";
 import { Ritual } from "@/components/sections/Ritual";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <main className="relative">
         <Hero />
         <Marquee />
+        <LiveAttacks />
         <LazySection fallbackHeight="100vh">
           <Fragile />
         </LazySection>
