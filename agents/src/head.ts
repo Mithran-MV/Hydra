@@ -149,6 +149,30 @@ async function main() {
     })();
   }
 
+  // Children — broadcast a `born` message after AXL connect, before the
+  // first heartbeat. Without this, peers only learn the child exists once
+  // its heartbeats start arriving, which leaves a brief window where they
+  // may route messages to a child they don't know about. The dispatch
+  // handler on peers calls mesh.registerDynamic on receipt so the child is
+  // marked alive immediately.
+  if (PARENT_ID) {
+    const mostRecentScar = scarRegistry.all().slice(-1)[0] ?? null;
+    const bornMsg: AXLMessage = {
+      type: "born",
+      from: identity.id,
+      parent: PARENT_ID,
+      gen: initialState.generation,
+      scar: mostRecentScar,
+    };
+    const livePeers = mesh.livePeers();
+    await Promise.all(livePeers.map((p) => axl.send(p.id, bornMsg)));
+    await emitEvent(identity.id, "born.broadcast", {
+      parent: PARENT_ID.slice(0, 16),
+      to: livePeers.length,
+    });
+    log.info(`👶 born broadcast sent to ${livePeers.length} peers`);
+  }
+
   // Subprocesses
   startHeartbeat({ identity, axl, mesh, state: initialState });
 
