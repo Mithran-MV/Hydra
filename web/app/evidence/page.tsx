@@ -585,14 +585,106 @@ function AxlStreamCard() {
   );
 }
 
+interface HeadStateEntry {
+  id: string;
+  headIndex: number | null;
+  status: string;
+  generation: number;
+  state: unknown;
+}
+
+interface OgStorageSnapshot {
+  refreshedAt: number;
+  kvBackend: string;
+  count: number;
+  heads: HeadStateEntry[];
+}
+
 function OgStorageCard() {
+  const [snap, setSnap] = useState<OgStorageSnapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const r = await fetch("/api/og-storage/state", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = (await r.json()) as OgStorageSnapshot;
+        if (!cancelled) {
+          setSnap(data);
+          setError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
+      }
+    };
+    void fetchOnce();
+    const i = setInterval(() => void fetchOnce(), 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
+  }, []);
+
   return (
     <EvidenceCard
       label="Codex v · Memory"
       title="0G Storage state per head"
-      source={{ href: "https://docs.0g.ai", text: "0g docs" }}
+      source={{
+        href: "https://docs.0g.ai",
+        text: "0g docs",
+      }}
     >
-      <Placeholder note="instrumenting on next attack — head-state KV reads to land in section commit" />
+      {snap ? (
+        snap.heads.length === 0 ? (
+          <Placeholder note="no head state files in KV mirror — has the swarm booted?" />
+        ) : (
+          <div className="space-y-2">
+            {snap.heads.map((h) => {
+              const isOpen = openId === h.id;
+              return (
+                <div
+                  key={h.id}
+                  className="rounded-lg border border-ink-700/60 bg-ink-950/40"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(isOpen ? null : h.id)}
+                    className="w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:bg-ink-900/50 transition-colors"
+                  >
+                    <div>
+                      <div className="font-mono text-xs text-venom-300">
+                        {h.id.slice(0, 16)}…
+                      </div>
+                      <div className="text-[0.65rem] text-neutral-500 font-mono mt-0.5">
+                        gen {h.generation} · status {h.status}
+                      </div>
+                    </div>
+                    <span className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-400">
+                      {isOpen ? "hide json" : "show json"}
+                    </span>
+                  </button>
+                  {isOpen ? (
+                    <pre className="px-3 pb-3 text-[0.7rem] font-mono text-neutral-300 overflow-x-auto leading-snug">
+                      {JSON.stringify(h.state, null, 2)}
+                    </pre>
+                  ) : null}
+                </div>
+              );
+            })}
+            <div className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono pt-2">
+              {snap.count} alive · refreshed {timeAgo(snap.refreshedAt)} ·{" "}
+              {snap.kvBackend.replace(/.*\(/, "(")}
+            </div>
+          </div>
+        )
+      ) : error ? (
+        <Placeholder note={`fetch failed: ${error}`} />
+      ) : (
+        <Placeholder note="reading from logs/og-kv…" />
+      )}
     </EvidenceCard>
   );
 }
