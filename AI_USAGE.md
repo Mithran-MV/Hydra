@@ -25,7 +25,7 @@ Three real bugs were caught via manual pre-fire verification before each automat
 
 ## How to verify
 
-Every commit's author + committer is `Mithran M.V. <mithran07.mv@gmail.com>`. There are no `Co-Authored-By` trailers — per ETHGlobal's *"Only the participant commits"* rule, AI co-authorship is disclosed here in prose, not in commit metadata.
+Per ETHGlobal's *"Only the participant commits"* rule, AI co-authorship is disclosed here in prose rather than in commit metadata.
 
 Git history is incremental — one logical change per commit, no `wip` / blob-imports — per ETHGlobal's *"Any repositories with single commits of large files without proper history will be default assumed to be unqualified"* rule.
 

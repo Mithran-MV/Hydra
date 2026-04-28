@@ -285,7 +285,7 @@ Five canonical docs cover the build's qualification, decision history, and ongoi
 - [`docs/AXL_PROTOCOL.md`](./docs/AXL_PROTOCOL.md) — full HYDRA AXL protocol spec (v1): all 7 message types with payload schemas + trigger conditions + per-type message volume, state machine, signing model with honest v2 disclosure, two reference sequence flows.
 - [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md) — Builder Feedback Bounty submission. Four reproducible findings with reproduction steps, plus the KeeperHub team's confirmed fix to issue #1 within ~36 hours.
 - [`docs/ADVERSARIAL_TESTING.md`](./docs/ADVERSARIAL_TESTING.md) — three real bugs caught during manual pre-fire verification (systemd Restart=always racing the consensus window, stale recentPanics, ghost peers in quorum), each with diagnosis + fix commit.
-- [`AI_USAGE.md`](./AI_USAGE.md) — ETHGlobal AI-disclosure: which files Claude Code touched, which decisions were the builder's. No `Co-Authored-By` trailer on any of the **176+ incremental commits** by `Mithran M.V. <mithran07.mv@gmail.com>`.
+- [`AI_USAGE.md`](./AI_USAGE.md) — ETHGlobal AI-disclosure: which files Claude Code touched, which decisions were the builder's. **176+ incremental commits** across the build window.
 - [`docs/planning/`](./docs/planning/) — pre-build spec artifacts: `IDEA_HYDRA.md`, `DECISION.md`, `ARCHITECTURE.md`, `BUILD_PLAN.md`, `CONTRACTS.md`, `DEMO_STORYBOARD.md`, `DAILY_ATTACK_CADENCE.md`. Restored from local trash on D5 to satisfy ETHGlobal's spec-driven AI rule.
 
 The KeeperHub round-trip story — issue reported via the in-app check-in on Apr 26, KeeperHub's Luca Malpiedi confirmed the auth fix on Apr 28 — is the most visible artifact of "we used the platform hard enough to surface a real bug, then collaborated to fix it." Detail in `KEEPERHUB_FEEDBACK.md` under the 2026-04-28 update header.
@@ -403,7 +403,7 @@ hydra/
 | 0G Compute (TEE-verified inference) | ✅ | `agents/src/memory/og-compute.ts` — SDK wired, fires on every child boot, emits typed `compute.skip` due to Galileo faucet ≪ 3 OG ledger minimum (honest disclosure) |
 | 0G Chain (contracts deployed) | ✅ | 4 contracts on 16602 — Registry / Treasury / Executor / HydraScars v2 ERC-721 |
 | iNFT (swarm-learned defenses on chain) | ✅ | HydraScars v2 `totalSupply = 4`, all four cause types represented |
-| Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra (176+ incremental commits, no Co-Authored-By trailers) |
+| Public GitHub + README | ✅ | https://github.com/Mithran-MV/Hydra · 176+ incremental commits |
 | Demo video < 3 min | 🟡 | placeholder above; recorded + linked **2026-04-30** before submission |
 | Agent coordination explained | ✅ | "How it works" + [`docs/planning/ARCHITECTURE.md`](./docs/planning/ARCHITECTURE.md) |
 | Built during hackathon (Apr 24 – Apr 30, 2026) | ✅ | git history shows incremental commits per day; pre-build spec docs under `docs/planning/` |
