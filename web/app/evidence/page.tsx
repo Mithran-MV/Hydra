@@ -328,14 +328,126 @@ function LiveAttacksCard() {
   );
 }
 
+interface KhRun {
+  ts: number;
+  kind: "notify" | "skip";
+  workflow: string;
+  cause: string;
+  status: number | null;
+  ok: boolean | null;
+  runId: string | null;
+  reason: string | null;
+}
+
+interface KhSnapshot {
+  refreshedAt: number;
+  workflowId: string;
+  totalRuns: number;
+  runs: KhRun[];
+}
+
 function KeeperHubCard() {
+  const [snap, setSnap] = useState<KhSnapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const r = await fetch("/api/keeperhub-runs", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = (await r.json()) as KhSnapshot;
+        if (!cancelled) {
+          setSnap(data);
+          setError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
+      }
+    };
+    void fetchOnce();
+    const i = setInterval(() => void fetchOnce(), 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
+  }, []);
+
   return (
     <EvidenceCard
       label="Codex iii · Audit"
       title="KeeperHub workflow runs"
       source={{ href: "https://app.keeperhub.com", text: "app.keeperhub.com" }}
     >
-      <Placeholder note="instrumenting on next attack — agent-side KH call log to land in section commit" />
+      {snap ? (
+        <div>
+          <div className="flex items-center justify-between text-xs text-neutral-400 mb-3">
+            <div>
+              workflow id:{" "}
+              <span className="font-mono text-venom-300">{snap.workflowId}</span>
+            </div>
+            <div className="font-mono text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500">
+              {snap.totalRuns} total
+            </div>
+          </div>
+          {snap.runs.length === 0 ? (
+            <Placeholder note="no KeeperHub calls observed yet — fires on every confirmed death" />
+          ) : (
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-xs font-mono">
+                <thead className="text-left text-[0.6rem] tracking-[0.2em] uppercase text-neutral-500 border-b border-ink-700/60">
+                  <tr>
+                    <th className="px-2 py-2 font-normal">When</th>
+                    <th className="px-2 py-2 font-normal">Workflow</th>
+                    <th className="px-2 py-2 font-normal">Cause</th>
+                    <th className="px-2 py-2 font-normal">Status</th>
+                    <th className="px-2 py-2 font-normal">Run / reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {snap.runs.map((r, i) => (
+                    <tr
+                      key={`${r.ts}-${i}`}
+                      className="border-b border-ink-800/60 last:border-0"
+                    >
+                      <td className="px-2 py-2 text-neutral-400 whitespace-nowrap">
+                        {timeAgo(r.ts)}
+                      </td>
+                      <td className="px-2 py-2 text-neutral-200">{r.workflow}</td>
+                      <td className="px-2 py-2 text-blood-400">{r.cause}</td>
+                      <td className="px-2 py-2">
+                        {r.kind === "skip" ? (
+                          <span className="text-ember-400">skipped</span>
+                        ) : r.ok ? (
+                          <span className="text-venom-300">
+                            {r.status} ok
+                          </span>
+                        ) : (
+                          <span className="text-blood-400">
+                            {r.status ?? "—"} fail
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-neutral-300 max-w-[200px] truncate">
+                        {r.runId ?? r.reason ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="mt-3 text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono leading-relaxed">
+            KH dashboard at app.keeperhub.com is permissioned per-org; data
+            shown here is the agent-side audit log of every KH call HYDRA has
+            made (read from logs/events.jsonl on the live host).
+          </p>
+        </div>
+      ) : error ? (
+        <Placeholder note={`fetch failed: ${error}`} />
+      ) : (
+        <Placeholder note="reading from logs/events.jsonl…" />
+      )}
     </EvidenceCard>
   );
 }
