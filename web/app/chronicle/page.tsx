@@ -569,7 +569,7 @@ function AxlStreamCard() {
   return (
     <EvidenceCard
       label="Codex iv · Mesh"
-      title="AXL message stream (live)"
+      title="AXL message stream — lifecycle events (live), full heartbeat trace below"
       source={{
         href: "https://github.com/gensyn-ai/axl",
         text: "gensyn-ai/axl",
