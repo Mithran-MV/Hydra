@@ -1,40 +1,6 @@
 "use client";
 
-interface Attack {
-  num: number;
-  utc: string;
-  cause: string;
-  target: string;
-  outcome: "resurrected" | "defended";
-  deathTx: string;
-}
-
-const ATTACKS: Attack[] = [
-  {
-    num: 1,
-    utc: "04-28 11:52",
-    cause: "process_killed",
-    target: "h2 (univ4_lp)",
-    outcome: "resurrected",
-    deathTx:
-      "0xed1c91804448c8701f9c26aa4e3c55e9485ab566cd87d8370abecfa6a077e59b",
-  },
-  {
-    num: 2,
-    utc: "04-28 12:45",
-    cause: "wallet_drained",
-    target: "h1 (aave_deposit)",
-    outcome: "resurrected",
-    deathTx:
-      "0x98c068d469c9929ebad399aa8e4d5663b3008a44ed93458edfa6d33ff5b6edf2",
-  },
-];
-
-const CHAINSCAN = "https://chainscan-galileo.0g.ai/tx/";
-
-function shortenTx(hash: string): string {
-  return hash.slice(0, 10) + "…";
-}
+import { ATTACKS, CHAINSCAN_TX, shortenTx } from "@/lib/attacks";
 
 export function LiveAttacks() {
   return (
@@ -96,7 +62,7 @@ export function LiveAttacks() {
                   </td>
                   <td className="px-4 py-3">
                     <a
-                      href={CHAINSCAN + a.deathTx}
+                      href={CHAINSCAN_TX + a.deathTx}
                       target="_blank"
                       rel="noreferrer"
                       className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"

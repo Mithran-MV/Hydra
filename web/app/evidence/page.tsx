@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ATTACKS, CHAINSCAN_TX, shortenTx } from "@/lib/attacks";
 
 interface ContractsSnapshot {
   refreshedAt: number;
@@ -251,7 +252,78 @@ function LiveAttacksCard() {
         text: "cadence plan",
       }}
     >
-      <Placeholder note="instrumenting on next attack — table will land in section commit" />
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full text-xs font-mono">
+          <thead className="text-left text-[0.6rem] tracking-[0.2em] uppercase text-neutral-500 border-b border-ink-700/60">
+            <tr>
+              <th className="px-2 py-2 font-normal">#</th>
+              <th className="px-2 py-2 font-normal">UTC</th>
+              <th className="px-2 py-2 font-normal">Cause</th>
+              <th className="px-2 py-2 font-normal">Target</th>
+              <th className="px-2 py-2 font-normal">Outcome</th>
+              <th className="px-2 py-2 font-normal">Death</th>
+              <th className="px-2 py-2 font-normal">iNFT</th>
+              <th className="px-2 py-2 font-normal">Born</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ATTACKS.map((a) => (
+              <tr key={a.num} className="border-b border-ink-800/60 last:border-0">
+                <td className="px-2 py-2 text-neutral-500">{a.num}</td>
+                <td className="px-2 py-2 text-neutral-300 whitespace-nowrap">
+                  {a.utc}
+                </td>
+                <td className="px-2 py-2 text-blood-400">{a.cause}</td>
+                <td className="px-2 py-2 text-neutral-200">{a.target}</td>
+                <td className="px-2 py-2">
+                  {a.outcome === "resurrected" ? (
+                    <span className="text-venom-300">resurrected</span>
+                  ) : (
+                    <span className="text-venom-200">defended</span>
+                  )}
+                </td>
+                <td className="px-2 py-2">
+                  <a
+                    href={CHAINSCAN_TX + a.deathTx}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                  >
+                    {shortenTx(a.deathTx)}
+                  </a>
+                </td>
+                <td className="px-2 py-2">
+                  <a
+                    href={CHAINSCAN_TX + a.inftMintTx}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                  >
+                    {shortenTx(a.inftMintTx)}
+                  </a>
+                </td>
+                <td className="px-2 py-2 space-x-2">
+                  {a.bornTxs.map((tx, i) => (
+                    <a
+                      key={tx}
+                      href={CHAINSCAN_TX + tx}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+                    >
+                      {i === 0 ? "h-a" : "h-b"}
+                    </a>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono">
+        outcome = &ldquo;defended&rdquo; when scar-enforced defense ships (D7)
+        and a re-attempt of an existing-scar cause is mechanically blocked
+      </p>
     </EvidenceCard>
   );
 }
