@@ -1,5 +1,31 @@
 # Builder feedback for KeeperHub
 
+## Update — 2026-04-28 (Day 5 of hackathon)
+
+The KeeperHub team responded to this feedback within ~36 hours of the
+initial check-in note. Luca Malpiedi (luca@keeperhub.com) confirmed:
+
+- **The webhook auth bug (issue #1 below) is fixed on KH's end**, and the
+  docs have been updated to make the key model clearer.
+- **The two API key types serve different purposes**, which I had been
+  treating as interchangeable:
+  - `wfb_…` — user API key, triggers workflows (per-user audit trail)
+  - `kh_…` — org API key, standalone direct execution API (org-scoped
+    wallets)
+- **The MCP `execute_workflow` workaround was the right call** given the
+  split — confirmed by Luca. Continuing on that path for HYDRA's
+  integration.
+
+Tested 2026-04-28: webhook now accepts `wfb_` Bearer tokens correctly.
+Switched the agent's webhook trigger to `wfb_` and kept `kh_` on the direct
+execution path.
+
+Issues #2 / #3 / #4 below are still open on the KH side at the time of
+writing; leaving the original write-ups unchanged so the trace of the
+original report remains intact.
+
+---
+
 I spent about two hours on KeeperHub this week trying to wire it into an
 autonomous agent swarm where one head of the swarm needs to fire a webhook
 to KH every time consensus confirms a death. KH was supposed to be the
@@ -15,7 +41,10 @@ config dance. So credit where it's due.
 
 The trouble started about ten minutes after that.
 
-## The webhook URL doesn't accept the API key it tells you to use
+## [BLOCKER · RESOLVED 2026-04-28] The webhook URL doesn't accept the API key it tells you to use
+
+**Discovered:** 2026-04-26, ~14:30 IST while wiring HYDRA's death-webhook trigger.
+**Workflow ID:** lcyuk85gh46defy5xaq8b
 
 I created a workflow in the editor (Webhook trigger → Run Code action). The
 properties panel shows me a Webhook URL. The Setup Guide also has a "Generate
@@ -54,7 +83,9 @@ flawlessly with the same Bearer token I tried at the webhook. Which is great
 for me but feels like an undocumented backdoor — no non-MCP integrator
 would discover it.
 
-## MCP write scope is silent
+## [HIGH · OPEN] MCP write scope is silent
+
+**Discovered:** 2026-04-26, ~16:00 IST while attempting programmatic workflow creation via MCP.
 
 After the auth thing, I tried to bypass the UI and create the workflow
 programmatically via `mcp__keeperhub__create_workflow`. 401. Then
@@ -80,7 +111,9 @@ keep my workflow JSON in my git repo and reconcile it on push. Right now
 the workflow lives only in KH's database — CI can't recreate it, and if I
 delete it by accident there's no recovery.
 
-## 0G chain isn't supported, and that's not documented
+## [MEDIUM · OPEN] 0G chain isn't supported, and that's not documented
+
+**Discovered:** 2026-04-27, ~10:00 IST while planning HYDRA's KH workflow chain-call routing.
 
 Our agent contracts live on 0G Galileo testnet (chain id 16602). When I
 called `list_action_schemas` with `includeChains: true` it returned 22 chain
@@ -101,7 +134,10 @@ a custom-RPC option on the contract action schemas. Bonus points for
 prioritizing chains in active hackathons KH co-sponsors — that's the
 demographic with the highest pain-per-day.
 
-## The Run Code editor flags `{{...}}` as a syntax error
+## [LOW · OPEN] The Run Code editor flags `{{...}}` as a syntax error
+
+**Discovered:** 2026-04-27, ~12:00 IST while editing the Run Code action body.
+**Workflow ID:** lcyuk85gh46defy5xaq8b
 
 Tried this in the Run Code body, copying the documented template syntax:
 
@@ -147,6 +183,38 @@ Lastly, the workflow editor itself is fast. From "I just signed up" to
 "webhook trigger configured, Run Code action wired, saved" took under 90
 seconds in the UI. That's hard to beat. Most workflow builders make me
 wrestle with palettes and connection handles.
+
+## Forward-looking: what would 10× KeeperHub for autonomous agents
+
+Building HYDRA, three things would move KH from "audit trail tool we use"
+to "core orchestration layer we couldn't build without":
+
+**Agent-identity-bound webhooks.** Every head in HYDRA has its own
+ed25519 keypair. Right now KH workflow runs are tagged by org or user,
+not by the agent identity that triggered them. If a webhook trigger
+could accept a signed agent identity in the payload and KH bound the
+run to that identity in the audit log, the run history becomes a
+verifiable per-agent ledger. Sponsor judges asking "did this *specific*
+head trigger this redistribution?" gets a one-call answer.
+
+**AXL-trigger primitives.** Today the bridge from a P2P mesh message
+(an AXL `confirmed` quorum decision in our case) to a KH workflow run
+goes through a head's webhook call. A native trigger like
+`Trigger: AXL message matching {topic, signer-set}` would close the
+loop — the workflow becomes part of the protocol layer rather than
+sitting one hop downstream of it. Competitors who use AXL purely as
+transport miss the upside; bound to KH, the mesh becomes orchestrator-
+addressable.
+
+**Per-workflow signing secret in the trigger panel.** Already mentioned
+above as a fix for issue #1, but worth re-stating as a feature ask:
+Stripe-style per-endpoint secrets are the right shape for "this URL is
+public, but only my agents know the secret." Decouples webhook auth
+from org-level API keys cleanly.
+
+These aren't hackathon must-haves — they're product directions if KH
+wants the agent-economy lane. Our experience suggests it's a strong
+fit; the runtime is already correct, the gaps are at the edges.
 
 ## Net-net
 
