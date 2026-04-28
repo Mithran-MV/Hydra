@@ -120,20 +120,28 @@ tokens #1–#3 stay on v1 as pre-cadence dev artifacts.
 ### Live attacks captured
 
 The swarm at `hydra.hacklabs.in` runs continuously. Every row below is a real
-attack against the live deployment, captured with five on-chain proofs that
-anyone can verify on chainscan-galileo. The table grows by one row per attack
-through D9 (May 2) per the daily cadence in `docs/planning/DAILY_ATTACK_CADENCE.md` (submission morning is D10 / May 3).
-For current swarm state see the [live dashboard](https://hydra.hacklabs.in/dashboard).
+attack against the live deployment, captured with chain proofs anyone can
+verify on chainscan-galileo. **All four cause types now represented**
+(process_killed · wallet_drained · api_timeout · key_revoked). For current
+swarm state see the [live dashboard](https://hydra.hacklabs.in/dashboard);
+for the complete record with KH execution ids, AXL message stream, and 0G
+storage uploads see [the Chronicle](https://hydra.hacklabs.in/chronicle).
 
 | # | UTC | Cause | Target | Outcome | Death | Scar | iNFT | Born ×2 |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 04-28 11:52 | `process_killed` | h2 (univ4_lp) | killed → resurrected | [`0xed1c918…`](https://chainscan-galileo.0g.ai/tx/0xed1c91804448c8701f9c26aa4e3c55e9485ab566cd87d8370abecfa6a077e59b) | [`0x857e9f1…`](https://chainscan-galileo.0g.ai/tx/0x857e9f1234abbd35aa146adedc36e9b51fc2edf783ed288b364b4229dfa6099c) | [`0xb8f858d…`](https://chainscan-galileo.0g.ai/tx/0xb8f858d900ac66d4a5e25fa00ed41f7d6bca0b0e228ef59e7afafc58e375633e) | [h4](https://chainscan-galileo.0g.ai/tx/0x9350a6fbc33d958cc78a3319c0ffe5b5059fe51a1d4d63e90136940c8489866d) · [h5](https://chainscan-galileo.0g.ai/tx/0xd2120eb6cbe7d8a99b7a6ed278d2d30fa554d6112bb11e9e8d90ccf465f00822) |
 | 2 | 04-28 12:45 | `wallet_drained` | h1 (aave_deposit) | killed → resurrected | [`0x98c068d…`](https://chainscan-galileo.0g.ai/tx/0x98c068d469c9929ebad399aa8e4d5663b3008a44ed93458edfa6d33ff5b6edf2) | [`0x808b6ee…`](https://chainscan-galileo.0g.ai/tx/0x808b6ee22dfbcb4f8fd64a56d0ff064ee4f7f134eb1f9df462cc272d0d95ea17) | [`0xb6dfa3b…`](https://chainscan-galileo.0g.ai/tx/0xb6dfa3ba4ce6858a4a6416dfe3582b77073a4e9bdf4aa069af519bc3a0dbf56b) | [h8](https://chainscan-galileo.0g.ai/tx/0x4fc4eb26a827b3f8e80f3de430548ff4cac9419692f85e530c742ae0646981db) · [h9](https://chainscan-galileo.0g.ai/tx/0xb2e8ac840aac23bf3fea787ba906cde64c33ccfbc504591a97ff7f6677bccbff) |
+| 3 | 04-28 18:18 | `api_timeout` | h3 (payroll) | killed → resurrected | [`0x368cef5…`](https://chainscan-galileo.0g.ai/tx/0x368cef572f9c5de7f47d41d087e677a4ce27d58bf6ee7e0693e92a1589e3a5ad) | [`0x6291832…`](https://chainscan-galileo.0g.ai/tx/0x629183202db745311262a6421278386475f6dfc42b8a335aa71ab74829cb442d) | [`0x94bea90…`](https://chainscan-galileo.0g.ai/tx/0x94bea901534439ec6a795036f1311593ce5d6ca71ee4294001376d1673f6b326) | [h10](https://chainscan-galileo.0g.ai/tx/0xdfe2d5986be505fd701b2c26a5b83eb8933a99adb17aa91f3879a4ced8c63912) · [h11](https://chainscan-galileo.0g.ai/tx/0x002e116de740767a72b3185c769b5c0572230f0c36a0311c423f7e484fdc4fb9) |
+| 4 | 04-28 18:40 | `key_revoked` | h2 (revived) | killed → resurrected | nonce raced (off-chain) | [`0xa838ef8…`](https://chainscan-galileo.0g.ai/tx/0xa838ef84f03e41fa1732dddc8e62823ea1bec4bbaeb370b431057f26127e27c2) | [`0xd04c5ac…`](https://chainscan-galileo.0g.ai/tx/0xd04c5ac218341de3890ee14977f92a5608c4b6617d52a3f9593af0220332bba3) | [h12](https://chainscan-galileo.0g.ai/tx/0x54e39c7f217ea299a401e36fe76f5fc2879b62fd79bb05b309a51a3457f9be25) · [h13](https://chainscan-galileo.0g.ai/tx/0xdebd0520c28e053ae439f2af9298c2e3dfb6a8eb678fb6a926f1991a76770781) |
 
-The "Outcome" column will read `killed → resurrected` until scar-enforced
-defense ships (planned D7) — after which a second attack of a cause already
-in the swarm's scar registry should read `defended (scar from #N)` instead of
-re-resurrecting. Per-attack journalctl traces under [`docs/attacks/`](./docs/attacks/).
+Attack #4's death tx hit a known shared-deployer-wallet nonce race; the
+off-chain consensus + resurrection still completed cleanly and the four
+remaining chain proofs (scar / iNFT / 2 born) are verifiable. The race is
+documented in [`docs/ADVERSARIAL_TESTING.md`](./docs/ADVERSARIAL_TESTING.md).
+The "Outcome" column reads `killed → resurrected` for every row today;
+mechanical scar enforcement (so a second attack of a known cause is
+*blocked* rather than absorbed-and-resurrected) is v2 work. Per-attack
+journalctl traces under [`docs/attacks/`](./docs/attacks/).
 
 ---
 
