@@ -231,6 +231,8 @@ async function main() {
     // 2a. Emit redistribute event with the dead head's last known balance.
     //     Value-protected counter on the dashboard sums these — the swarm
     //     redistributed this much instead of losing it to the dead head's wallet.
+    //     Also fire the KH treasury-redistribute workflow so the move is in
+    //     KH's run history alongside the death-event.
     try {
       const dead = await readStateSnapshot(target);
       if (dead && dead.balance && dead.balance !== "0") {
@@ -239,6 +241,20 @@ async function main() {
           amount: dead.balance,
           childHeads: result?.childIds ?? [],
         });
+        const treasuryWorkflowId =
+          process.env.HYDRA_KH_TREASURY_WORKFLOW_ID ?? "uybkmq5v2mpvgji7933ji";
+        void executeWorkflow(
+          treasuryWorkflowId,
+          {
+            kind: "treasury-redistribute",
+            deadHead: target,
+            amount: dead.balance,
+            childHeads: result?.childIds ?? [],
+            ts: Date.now(),
+            authorityPeerId: identity.id,
+          },
+          "treasury-redistribute",
+        );
       }
     } catch {
       // best-effort
