@@ -18,6 +18,22 @@ const STATUS_COLOR: Record<string, string> = {
   dead: "#ff2d55",
 };
 
+// Color the node ring by generation for healthy heads — quick visual
+// of how many resurrection layers deep a peer is. Suspected/dead/booting
+// keep their status colour because that's the more urgent signal.
+const GEN_TINT: Record<number, string> = {
+  0: "#37ff9e", // venom — originals
+  1: "#ffb347", // ember — first generation of resurrection
+  2: "#c084fc", // purple — second generation
+};
+function nodeColor(state: { status: string; generation: number }): string {
+  if (state.status === "healthy" && state.generation in GEN_TINT) {
+    return GEN_TINT[state.generation];
+  }
+  if (state.status === "healthy" && state.generation >= 3) return "#f0abfc";
+  return STATUS_COLOR[state.status] ?? "#888";
+}
+
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   state: HeadState;
@@ -111,22 +127,38 @@ export function SwarmGraph({ heads, scarsCount }: Props) {
 
     node
       .append("circle")
-      .attr("r", 22)
+      .attr("r", 28)
       .attr("fill", "#05060a")
-      .attr("stroke", (d) => STATUS_COLOR[d.state.status] ?? "#888")
+      .attr("stroke", (d) => nodeColor(d.state))
       .attr("stroke-width", 2);
 
     node
       .append("circle")
-      .attr("r", 5)
-      .attr("fill", (d) => STATUS_COLOR[d.state.status] ?? "#888")
-      .attr("opacity", 0.85);
+      .attr("r", 6)
+      .attr("fill", (d) => nodeColor(d.state))
+      .attr("opacity", 0.9);
+
+    // Native SVG tooltip — hover any node to see full identity + state.
+    node.append("title").text((d) => {
+      const s = d.state;
+      const lines = [
+        `head: ${s.id}`,
+        `generation: ${s.generation}`,
+        `status: ${s.status}`,
+        `strategy: ${s.strategy}`,
+        `wallet: ${s.wallet}`,
+        `scars inherited: ${s.inheritedScars.length}`,
+      ];
+      if (s.parent) lines.push(`parent: ${s.parent}`);
+      if (s.deathCause) lines.push(`death cause: ${s.deathCause}`);
+      return lines.join("\n");
+    });
 
     node
       .append("text")
       .text((d) => d.id.slice(0, 6))
       .attr("text-anchor", "middle")
-      .attr("dy", 38)
+      .attr("dy", 46)
       .attr("font-family", "ui-monospace, SFMono-Regular, monospace")
       .attr("font-size", 10)
       .attr("fill", "#a3a3a3");
@@ -135,7 +167,7 @@ export function SwarmGraph({ heads, scarsCount }: Props) {
       .append("text")
       .text((d) => `gen ${d.state.generation}`)
       .attr("text-anchor", "middle")
-      .attr("dy", 50)
+      .attr("dy", 58)
       .attr("font-family", "ui-monospace, SFMono-Regular, monospace")
       .attr("font-size", 9)
       .attr("fill", "#737373");
@@ -163,15 +195,19 @@ export function SwarmGraph({ heads, scarsCount }: Props) {
     <div className="relative w-full h-full">
       <svg ref={svgRef} className="w-full h-full" />
       <div className="absolute bottom-3 left-3 font-mono text-[0.65rem] text-neutral-600 leading-snug">
-        <div>{heads.length} nodes · {scarsCount} scars</div>
-        <div className="mt-1 flex gap-3">
+        <div>{heads.length} nodes · {scarsCount} scars · hover a node for full state</div>
+        <div className="mt-1 flex flex-wrap gap-3">
           <span>
             <span className="inline-block w-2 h-2 rounded-full bg-venom-400 mr-1" />
-            healthy
+            gen 0
+          </span>
+          <span>
+            <span className="inline-block w-2 h-2 rounded-full bg-ember-400 mr-1" />
+            gen 1
           </span>
           <span>
             <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-1" />
-            newborn
+            gen 2+
           </span>
           <span>
             <span className="inline-block w-3 h-px bg-blood-500 align-middle mr-1" />
