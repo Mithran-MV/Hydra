@@ -354,9 +354,9 @@ hydra/
 
 **HYDRA**
 
-- Mithran M.V. — GitHub [@Mithran-MV](https://github.com/Mithran-MV) · Telegram [@Mithran07](https://t.me/Mithran07)
-- Kamalesh T — Telegram [@dearkamalesh](https://t.me/dearkamalesh)
-- Fabio Mughilan — Telegram [@fabiomughilan](https://t.me/fabiomughilan)
+- Mithran M.V. — GitHub [@Mithran-MV](https://github.com/Mithran-MV) · Telegram [@Mithran07](https://t.me/Mithran07) · X [@MithranMv31438](https://x.com/MithranMv31438)
+- Kamalesh T — Telegram [@dearkamalesh](https://t.me/dearkamalesh) · X [@Kamales62551228](https://x.com/Kamales62551228)
+- Fabio Mughilan — Telegram [@fabiomughilan](https://t.me/fabiomughilan) · X [@fabiomughilan](https://x.com/fabiomughilan)
 
 ---
 
