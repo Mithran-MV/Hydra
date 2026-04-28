@@ -83,7 +83,7 @@ function Footer() {
   );
 }
 
-export function EvidenceCard({
+function EvidenceCard({
   label,
   title,
   source,
@@ -119,7 +119,7 @@ export function EvidenceCard({
   );
 }
 
-export function Placeholder({ note }: { note: string }) {
+function Placeholder({ note }: { note: string }) {
   return (
     <div className="text-sm text-neutral-500 font-mono italic">
       <span className="inline-block h-1 w-1 rounded-full bg-ember-400 mr-2 align-middle" />
