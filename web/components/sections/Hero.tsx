@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DeferredHydraScene } from "@/components/three/DeferredScene";
@@ -173,17 +174,21 @@ export function Hero() {
               </p>
 
               <div className="mt-10 flex flex-wrap items-center gap-4">
-                <a href="#ritual" className="hero-cta mythic-btn">
-                  Witness the Ritual
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <Link
+                  href="/dashboard"
+                  className="hero-cta mythic-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-venom-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+                  aria-label="View live HYDRA dashboard"
+                >
+                  View live dashboard
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path
-                      d="M12 5v14m0 0l-6-6m6 6l6-6"
+                      d="M5 12h14M13 6l6 6-6 6"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
                   </svg>
-                </a>
+                </Link>
                 <a href="/dashboard" className="hero-cta mythic-btn-ghost">
                   Enter the Swarm →
                 </a>
