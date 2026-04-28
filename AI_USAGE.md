@@ -19,6 +19,10 @@ Per ETHGlobal's policy, hackathon projects must disclose AI assistance. HYDRA wa
 - **Wallets, keys, and signing.** All key generation (`openssl genpkey -algorithm ed25519`) and signing operations were done locally by the builder.
 - **The hackathon submission writeup.** Final form is the builder's words.
 
+## Adversarial testing
+
+Three real bugs were caught via manual pre-fire verification before each automated kill cadence step (`systemd Restart=always` racing the consensus window, stale `recentPanics` blocking fresh causes, ghost peers inflating the quorum threshold). Full diagnosis + fixes in [`docs/ADVERSARIAL_TESTING.md`](./docs/ADVERSARIAL_TESTING.md). The pattern was: AI helped *propose* the fix, the builder verified it against a live deployment, and the bug + fix shipped as one tightly-scoped commit each — not as a "while we're here" cleanup.
+
 ## How to verify
 
 Every commit's author + committer is `Mithran M.V. <mithran07.mv@gmail.com>`. There are no `Co-Authored-By` trailers — per ETHGlobal's *"Only the participant commits"* rule, AI co-authorship is disclosed here in prose, not in commit metadata.
