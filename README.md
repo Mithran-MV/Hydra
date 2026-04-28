@@ -71,16 +71,18 @@ swarm's hard-earned lessons.
 
 Production scars live on the v2 contract at
 [`0x838083ff…`](https://chainscan-galileo.0g.ai/token/0x838083ff1334ccc68400d1576f59282d32320dbe)
-(full ERC-721 surface, ERC-165 detectable). Cause + rule + outcome are
-stored in contract mappings (`causeOf[tokenId]`, `ruleOf[tokenId]`,
-`outcomeOf[tokenId]`) and surfaced through `tokenURI` as a base64-encoded
-data URI. Click any "Mint tx" link to verify the mint event and the
-embedded rule on chainscan-galileo.
+(full ERC-721 surface, ERC-165 detectable, `totalSupply` = 4 — one per attack
+captured). Cause + rule + outcome are stored in contract mappings
+(`causeOf[tokenId]`, `ruleOf[tokenId]`, `outcomeOf[tokenId]`) and surfaced
+through `tokenURI` as a base64-encoded data URI. Click any "Mint tx"
+link to verify the mint event and the embedded rule on chainscan-galileo.
 
 | Token | Cause | Rule (embedded in `ruleOf[id]`, returned by `tokenURI`) | Owner | Mint tx |
 |---|---|---|---|---|
 | #1 | `process_killed` | "shorter checkpoint interval + supervisord respawn" | h1 wallet | [`0x26d45f5a…`](https://chainscan-galileo.0g.ai/tx/0x26d45f5a98e8fe77470a90d0a727617e543a4586723c6e5ff58ee0c82e19d926) |
 | #2 | `wallet_drained` | "halt strategy + require multi-sig approval for next action" | h3 wallet | [`0x995f2c88…`](https://chainscan-galileo.0g.ai/tx/0x995f2c88072ec25b74b7cb940d4553a3145400552a0ee9ccfe9928adb436e94f) |
+| #3 | `api_timeout` | "fall back to secondary RPC after 2 consecutive failures" | h1 wallet | [`0x94bea901…`](https://chainscan-galileo.0g.ai/tx/0x94bea901534439ec6a795036f1311593ce5d6ca71ee4294001376d1673f6b326) |
+| #4 | `key_revoked` | "rotate to backup signer and re-register with registry" | h1 wallet | [`0xd04c5ac2…`](https://chainscan-galileo.0g.ai/tx/0xd04c5ac218341de3890ee14977f92a5608c4b6617d52a3f9593af0220332bba3) |
 
 Sample decoded `tokenURI(2)` (the `wallet_drained` scar from attack #2,
 base64-decoded for readability):
