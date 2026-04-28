@@ -297,9 +297,9 @@ hydra/
 
 **HYDRA**
 
-- Mithran M.V. — GitHub [@Mithran-MV](https://github.com/Mithran-MV)
-- *teammate name* — *github handle*
-- *teammate name* — *github handle*
+- Mithran M.V. — GitHub [@Mithran-MV](https://github.com/Mithran-MV) · Telegram [@Mithran07](https://t.me/Mithran07)
+- Telegram [@fabiomughilan](https://t.me/fabiomughilan)
+- Telegram [@dearkamalesh](https://t.me/dearkamalesh)
 
 ---
 
