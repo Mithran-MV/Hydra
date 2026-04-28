@@ -277,6 +277,20 @@ Each sponsor is load-bearing: without AXL the anti-fragility is centralized; wit
 
 ---
 
+## Documentation
+
+Five canonical docs cover the build's qualification, decision history, and ongoing operational record:
+
+- [`SPONSORS.md`](./SPONSORS.md) — per-sponsor depth: methods called, files involved, and what would break without each integration.
+- [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md) — Builder Feedback Bounty submission. Four reproducible findings with reproduction steps, plus the KeeperHub team's confirmed fix to issue #1 within ~36 hours.
+- [`docs/ADVERSARIAL_TESTING.md`](./docs/ADVERSARIAL_TESTING.md) — three real bugs caught during manual pre-fire verification (systemd Restart=always racing the consensus window, stale recentPanics, ghost peers in quorum), each with diagnosis + fix commit.
+- [`AI_USAGE.md`](./AI_USAGE.md) — ETHGlobal AI-disclosure: which files Claude Code touched, which decisions were the builder's. No `Co-Authored-By` trailer on any of the **176+ incremental commits** by `Mithran M.V. <mithran07.mv@gmail.com>`.
+- [`docs/planning/`](./docs/planning/) — pre-build spec artifacts: `IDEA_HYDRA.md`, `DECISION.md`, `ARCHITECTURE.md`, `BUILD_PLAN.md`, `CONTRACTS.md`, `DEMO_STORYBOARD.md`, `DAILY_ATTACK_CADENCE.md`. Restored from local trash on D5 to satisfy ETHGlobal's spec-driven AI rule.
+
+The KeeperHub round-trip story — issue reported via the in-app check-in on Apr 26, KeeperHub's Luca Malpiedi confirmed the auth fix on Apr 28 — is the most visible artifact of "we used the platform hard enough to surface a real bug, then collaborated to fix it." Detail in `KEEPERHUB_FEEDBACK.md` under the 2026-04-28 update header.
+
+---
+
 ## Setup (local)
 
 Prerequisites: Node 22+, Go 1.21+, an OG-funded wallet on 0G Galileo testnet.
