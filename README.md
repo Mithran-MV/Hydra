@@ -28,7 +28,7 @@ Today's agent fleets — yield bots, keeper networks, automated treasuries, agen
 HYDRA is the layer underneath those agents. Each head runs the strategy you'd run anyway (Aave deposit, Uniswap LP, scheduled payroll), but it does so as a member of a peer-to-peer swarm with three properties:
 
 1. **Availability bounded by minutes, not days.** When a head dies, the swarm reaches consensus on the cause within ~15s and a leader spawns two replacements within another ~30s. Total downtime per head: <60 seconds.
-2. **Memory inherited across deaths.** Children read the dead head's last `HeadState` snapshot on boot from a local KV mirror (today) plus a 0G Storage blob upload of every newly-learned scar (live, returns `rootHash` + `txHash`). KV-on-0G via the official SDK is on the D7 build day; until then the local mirror is the source of truth and every scar is independently durable on the 0G Storage Indexer.
+2. **Memory inherited across deaths.** Children read the dead head's last `HeadState` snapshot on boot from a local KV mirror plus a 0G Storage blob upload of every newly-learned scar (live, returns `rootHash` + `txHash`). KV-on-0G via the official SDK is v2 work; until then the local mirror is the source of truth and every scar is independently durable on the 0G Storage Indexer.
 3. **Failures become permanent immune responses.** Every confirmed death writes a defense rule (`scar`) to a global stream and mints it as an iNFT on 0G Chain. Every surviving and future head reads it on boot. The swarm gets *smarter every time it gets attacked*, and the rule is publicly auditable as ERC-721 metadata anyone can inherit.
 
 Agent operators get bounded downtime + cumulative immunity. Treasuries don't get drained — funds live in a constrained `HydraTreasury`, never in head EOAs, with execution gated behind a whitelist of (target, selector) pairs. A compromised head cannot route value anywhere except back to the treasury.
@@ -101,9 +101,9 @@ base64-decoded for readability):
 }
 ```
 
-`outcome` defaults to `"resurrected"` and is mutable via `setOutcome` once
-scar-enforced defense ships (D7 build task) — at which point a second
-attack of an already-known cause flips the value to `"defended"`.
+`outcome` defaults to `"resurrected"` and is mutable via `setOutcome`. Once
+mechanical scar enforcement ships as v2 work, a second attack of an
+already-known cause flips the value to `"defended"` instead of resurrecting.
 
 New scars mint to this contract per attack per the cadence in
 [`docs/planning/DAILY_ATTACK_CADENCE.md`](./docs/planning/DAILY_ATTACK_CADENCE.md).
@@ -216,11 +216,11 @@ surviving + future head now carries the new defense rule.
 
 1. **AXL mesh** — each head runs its own Gensyn AXL Go node (separate process, distinct ed25519 peer-id, listens on its own TLS port). Heartbeats are signed and routed peer-to-peer every 3 seconds — no central broker.
 2. **Consensus** — when a peer misses 5 heartbeats (15s), surviving heads broadcast `suspect` messages. When ⌈n/2⌉+1 heads agree, the lowest-peer-id leader broadcasts `confirmed` with the inferred death cause.
-3. **Memory on 0G Storage** — every newly-learned scar is uploaded to 0G Storage as a JSON blob via `uploadJsonToOG` (returns `rootHash` + `txHash` from the Indexer; visible in `events.jsonl`). Per-head `HeadState` snapshots and event logs currently mirror to a local KV directory; live KV via the SDK is on the D7 build target. Children inherit state from the local mirror on boot — same wire-up as the live SDK will use, with the storage backend swap being a one-line change.
+3. **Memory on 0G Storage** — every newly-learned scar is uploaded to 0G Storage as a JSON blob via `uploadJsonToOG` (returns `rootHash` + `txHash` from the Indexer; visible in `events.jsonl`). Per-head `HeadState` snapshots and event logs currently mirror to a local KV directory; live KV via the SDK is v2 work. Children inherit state from the local mirror on boot — same wire-up as the live SDK will use, with the storage backend swap being a one-line change per function.
 4. **Resurrection** — leader generates two fresh ed25519 keypairs, writes AXL configs, spawns two AXL Go sidecars, then spawns two Node head processes with `PARENT_ID` env var. Children boot, read parent's last state from 0G, broadcast `born`, join the mesh.
 5. **TEE-verified inference** — children call `0G Compute` once on boot via `@0glabs/0g-serving-broker`; the response is verified via `processResponse` (TeeML / TeeTLS attestation) so the swarm's "should I act?" decision is provably honest compute. **Galileo testnet caveat:** the broker requires a 3 OG ledger minimum and the testnet faucet caps at 0.1 OG / day per address, so on testnet the call typically lands as a `compute.skip` event with a typed funding-gap error rather than a TEE-attested response. The integration path fires on every child boot — the gap is faucet ergonomics, not wiring. Visible in `events.jsonl` and on `/chronicle` Section 3 once the next attack lands a child.
-6. **iNFT scar minting** — every learned defense rule mints an ERC-721-like NFT on `HydraScars` (chain 16602). Each token's metadata embeds the cause + mitigation rule on chain — auditable by judges.
-7. **KeeperHub audit trail** — leader fires a webhook to a KeeperHub workflow on every confirmed death. The workflow logs the death payload + audit record in run history (the prize criterion's "audit trail").
+6. **iNFT scar minting** — every learned defense rule mints an ERC-721 + ERC-165 + ERC-721Metadata token on `HydraScars` v2 (chain 16602). The cause string and full mitigation rule live in contract storage (`causeOf[id]`, `ruleOf[id]`); `tokenURI` returns a `data:application/json;base64,…` URI so chain explorers render the NFT card with the rule visible directly.
+7. **KeeperHub audit trail** — leader calls `mcp__keeperhub__execute_workflow` over MCP HTTP on every confirmed death + treasury redistribute + scar mint, plus heartbeat-stale watchdog hits. Four workflows live; full execution input + run history visible in the KH dashboard, deep-linked from `/chronicle` Section 3.
 8. **Whitelisted execution** — funds live in `HydraTreasury`, never in head EOAs. `HydraExecutor` permits only `(target, selector)` pairs explicitly whitelisted by the owner. A compromised head's key cannot drain the treasury — it can only call functions that route value back to the treasury.
 
 ---
