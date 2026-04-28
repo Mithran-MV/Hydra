@@ -282,6 +282,7 @@ Each sponsor is load-bearing: without AXL the anti-fragility is centralized; wit
 Five canonical docs cover the build's qualification, decision history, and ongoing operational record:
 
 - [`SPONSORS.md`](./SPONSORS.md) — per-sponsor depth: methods called, files involved, and what would break without each integration.
+- [`docs/AXL_PROTOCOL.md`](./docs/AXL_PROTOCOL.md) — full HYDRA AXL protocol spec (v1): all 7 message types with payload schemas + trigger conditions + per-type message volume, state machine, signing model with honest v2 disclosure, two reference sequence flows.
 - [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md) — Builder Feedback Bounty submission. Four reproducible findings with reproduction steps, plus the KeeperHub team's confirmed fix to issue #1 within ~36 hours.
 - [`docs/ADVERSARIAL_TESTING.md`](./docs/ADVERSARIAL_TESTING.md) — three real bugs caught during manual pre-fire verification (systemd Restart=always racing the consensus window, stale recentPanics, ghost peers in quorum), each with diagnosis + fix commit.
 - [`AI_USAGE.md`](./AI_USAGE.md) — ETHGlobal AI-disclosure: which files Claude Code touched, which decisions were the builder's. No `Co-Authored-By` trailer on any of the **176+ incremental commits** by `Mithran M.V. <mithran07.mv@gmail.com>`.

@@ -856,9 +856,9 @@ interface CommitsSnapshot {
 const QUICK_LINKS: Array<{ label: string; path: string; live: boolean }> = [
   { label: "KEEPERHUB_FEEDBACK.md", path: "KEEPERHUB_FEEDBACK.md", live: true },
   { label: "docs/ADVERSARIAL_TESTING.md", path: "docs/ADVERSARIAL_TESTING.md", live: true },
+  { label: "docs/AXL_PROTOCOL.md", path: "docs/AXL_PROTOCOL.md", live: true },
   { label: "AI_USAGE.md", path: "AI_USAGE.md", live: true },
   { label: "SPONSORS.md", path: "SPONSORS.md", live: true },
-  { label: "docs/AXL_PROTOCOL.md (D7)", path: "docs/AXL_PROTOCOL.md", live: false },
 ];
 
 function RepositoryCard() {
