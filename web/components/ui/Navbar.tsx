@@ -63,14 +63,13 @@ export function Navbar() {
           >
             Live Swarm
           </Link>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href="/chronicle"
             className="mythic-btn !py-2 !px-4 !text-[0.68rem]"
+            aria-label="Read the Chronicle — HYDRA's complete run record"
           >
-            Attack
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            Chronicle
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M5 12h14M13 6l6 6-6 6"
                 stroke="currentColor"
@@ -79,7 +78,7 @@ export function Navbar() {
                 strokeLinejoin="round"
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </header>
