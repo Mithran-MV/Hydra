@@ -689,14 +689,138 @@ function OgStorageCard() {
   );
 }
 
+interface CommitSummary {
+  sha: string;
+  shortSha: string;
+  subject: string;
+  author: string;
+  date: string;
+  htmlUrl: string;
+}
+
+interface CommitsSnapshot {
+  refreshedAt: number;
+  repo: string;
+  totalCommits: number | null;
+  recent: CommitSummary[];
+}
+
+const QUICK_LINKS: Array<{ label: string; path: string; live: boolean }> = [
+  { label: "KEEPERHUB_FEEDBACK.md", path: "KEEPERHUB_FEEDBACK.md", live: true },
+  { label: "docs/ADVERSARIAL_TESTING.md", path: "docs/ADVERSARIAL_TESTING.md", live: true },
+  { label: "AI_USAGE.md", path: "AI_USAGE.md", live: true },
+  { label: "SPONSORS.md", path: "SPONSORS.md", live: true },
+  { label: "docs/AXL_PROTOCOL.md (D7)", path: "docs/AXL_PROTOCOL.md", live: false },
+];
+
 function RepositoryCard() {
+  const [snap, setSnap] = useState<CommitsSnapshot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOnce = async () => {
+      try {
+        const r = await fetch("/api/github-commits", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = (await r.json()) as CommitsSnapshot;
+        if (!cancelled) {
+          setSnap(data);
+          setError(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
+      }
+    };
+    void fetchOnce();
+    const i = setInterval(() => void fetchOnce(), 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
+  }, []);
+
   return (
     <EvidenceCard
       label="Codex vi · Provenance"
       title="Repository & build"
       source={{ href: "https://github.com/Mithran-MV/Hydra", text: "github" }}
     >
-      <Placeholder note="instrumenting on next deploy — recent commits + qualification doc links to land in section commit" />
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-neutral-400">
+          repo:{" "}
+          <a
+            href={`https://github.com/${snap?.repo ?? "Mithran-MV/Hydra"}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono text-venom-300 hover:text-venom-200 underline-offset-4 hover:underline"
+          >
+            {snap?.repo ?? "Mithran-MV/Hydra"}
+          </a>
+        </div>
+        <div className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono">
+          {snap?.totalCommits != null
+            ? `${snap.totalCommits} commits`
+            : "loading…"}
+        </div>
+      </div>
+
+      {snap ? (
+        snap.recent.length === 0 ? (
+          <Placeholder note="GitHub API returned no commits — rate-limited?" />
+        ) : (
+          <div className="rounded border border-ink-700/60 bg-ink-950/40 divide-y divide-ink-800/60">
+            {snap.recent.map((c) => (
+              <a
+                key={c.sha}
+                href={c.htmlUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="block px-3 py-2 text-xs hover:bg-ink-900/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-venom-300">{c.shortSha}</span>
+                  <span className="font-mono text-[0.65rem] text-neutral-500 whitespace-nowrap">
+                    {new Date(c.date).toISOString().slice(0, 10)}
+                  </span>
+                  <span className="text-neutral-300 truncate">{c.subject}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )
+      ) : error ? (
+        <Placeholder note={`fetch failed: ${error}`} />
+      ) : (
+        <Placeholder note="reading from api.github.com…" />
+      )}
+
+      <div className="mt-4">
+        <div className="text-[0.6rem] tracking-[0.3em] uppercase text-neutral-500 font-mono mb-2">
+          Qualification documents
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_LINKS.map((q) => (
+            <a
+              key={q.path}
+              href={
+                q.live
+                  ? `https://github.com/Mithran-MV/Hydra/blob/main/${q.path}`
+                  : `https://github.com/Mithran-MV/Hydra/blob/main/${q.path}`
+              }
+              target="_blank"
+              rel="noreferrer"
+              className={`px-2 py-1 rounded font-mono text-[0.65rem] tracking-[0.15em] uppercase border transition-colors ${
+                q.live
+                  ? "border-ink-700 text-neutral-400 hover:border-venom-400 hover:text-venom-300"
+                  : "border-ink-700/60 text-neutral-600 hover:text-neutral-400"
+              }`}
+            >
+              {q.label}
+            </a>
+          ))}
+        </div>
+      </div>
     </EvidenceCard>
   );
 }
