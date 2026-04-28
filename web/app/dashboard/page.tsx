@@ -8,6 +8,39 @@ import { TEEBadge } from "@/components/dashboard/TEEBadge";
 import { KeeperHubRunCard } from "@/components/dashboard/KeeperHubRunCard";
 import type { HeadState, Scar, SwarmSnapshot } from "@shared/types";
 
+function FreshnessIndicator({
+  lastUpdate,
+  live,
+}: {
+  lastUpdate: number | null;
+  live: boolean;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const ago = lastUpdate ? Math.max(0, Math.floor((now - lastUpdate) / 1000)) : null;
+  const stale = ago != null && ago > 5;
+  return (
+    <span className="inline-flex items-center gap-2 font-mono text-[0.65rem] tracking-[0.25em] uppercase text-neutral-500">
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          live && !stale
+            ? "bg-venom-400 animate-pulse"
+            : stale
+              ? "bg-ember-400"
+              : "bg-neutral-600"
+        }`}
+      />
+      {live ? (stale ? "stale" : "live") : "offline"}
+      {ago != null ? (
+        <span className="text-neutral-600">· last update {ago}s ago</span>
+      ) : null}
+    </span>
+  );
+}
+
 const STRATEGY_LABEL: Record<string, string> = {
   aave_deposit: "Aave deposit",
   univ4_lp: "UniV4 LP",
@@ -16,24 +49,39 @@ const STRATEGY_LABEL: Record<string, string> = {
 
 export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<SwarmSnapshot | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<number | null>(null);
+  const [live, setLive] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const attachSSE = () => {
       try {
         const source = new EventSource("/api/events");
+        source.onopen = () => {
+          if (!cancelled) setLive(true);
+        };
         source.onmessage = (e) => {
           try {
-            if (!cancelled) setSnapshot(JSON.parse(e.data));
+            if (!cancelled) {
+              setSnapshot(JSON.parse(e.data));
+              setLastUpdate(Date.now());
+              setLive(true);
+            }
           } catch {}
         };
         source.onerror = () => {
           source.close();
-          if (!cancelled) setSnapshot(mockSnapshot());
+          if (!cancelled) {
+            setLive(false);
+            if (!snapshot) setSnapshot(mockSnapshot());
+          }
         };
         return source;
       } catch {
-        if (!cancelled) setSnapshot(mockSnapshot());
+        if (!cancelled) {
+          setLive(false);
+          setSnapshot(mockSnapshot());
+        }
         return null;
       }
     };
@@ -84,8 +132,11 @@ export default function DashboardPage() {
             Dashboard
           </span>
         </div>
-        <div className="font-mono text-xs text-neutral-500">
-          swarm.live · 0G galileo testnet
+        <div className="flex items-center gap-4 flex-wrap justify-end">
+          <FreshnessIndicator lastUpdate={lastUpdate} live={live} />
+          <div className="font-mono text-xs text-neutral-500">
+            swarm.live · 0G galileo testnet
+          </div>
         </div>
       </nav>
 

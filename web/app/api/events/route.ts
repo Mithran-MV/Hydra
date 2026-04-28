@@ -192,7 +192,9 @@ export async function GET() {
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
+      // no-store so any intermediary or browser back/forward cache always
+      // reconnects to the live stream rather than replaying a stale snapshot.
+      "Cache-Control": "no-store, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     },
