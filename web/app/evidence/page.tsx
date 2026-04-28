@@ -666,12 +666,20 @@ function OgStorageCard() {
   return (
     <EvidenceCard
       label="Codex v · Memory"
-      title="0G Storage state per head"
+      title="Head state (KV mirror)"
       source={{
         href: "https://docs.0g.ai",
         text: "0g docs",
       }}
     >
+      <p
+        className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono mb-3 leading-relaxed"
+        title="Locally mirrored from 0G Storage SDK writes. Scars persist directly on 0G Storage via uploadJsonToOG — see Section 1 for storage tx hashes."
+      >
+        Locally mirrored. Scars upload directly to 0G Storage via
+        uploadJsonToOG (see Section 1 for tx hashes). Live KV-on-0G
+        migration scheduled D7.
+      </p>
       {snap ? (
         snap.heads.length === 0 ? (
           <Placeholder note="no head state files in KV mirror — has the swarm booted?" />
@@ -709,9 +717,9 @@ function OgStorageCard() {
                 </div>
               );
             })}
-            <div className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono pt-2">
-              {snap.count} alive · refreshed {timeAgo(snap.refreshedAt)} ·{" "}
-              {snap.kvBackend.replace(/.*\(/, "(")}
+            <div className="text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono pt-2 leading-relaxed">
+              {snap.count} alive · refreshed {timeAgo(snap.refreshedAt)} ·
+              live KV-on-0G migration scheduled D7
             </div>
           </div>
         )
