@@ -64,6 +64,15 @@ export async function GET() {
   };
 
   return Response.json(snap, {
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      // Bypass any edge/CDN cache between origin and the chronicle page.
+      // Without Surrogate-Control + CDN-Cache-Control, Cloudflare can serve
+      // a stale snapshot back to /chronicle even after the agent has logged
+      // new runs to keeperhub-runs.jsonl.
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "Surrogate-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
+    },
   });
 }

@@ -20,12 +20,21 @@ interface CommitsSnapshot {
   recent: CommitSummary[];
 }
 
+// Per-request nonce to bust any edge / fetch caching between us and GitHub.
+// Without this, Cloudflare in front of hydra.hacklabs.in occasionally serves
+// a stale Response.json snapshot back to clients even with `cache: "no-store"`,
+// which leaves the chronicle page showing older commits long after a push.
+function nonce(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 async function fetchTotalCommits(): Promise<number | null> {
   // Trick: per_page=1 + Link header rel="last" page index = total commit count
-  const r = await fetch(`${BASE}/commits?per_page=1`, {
+  const r = await fetch(`${BASE}/commits?per_page=1&_=${nonce()}`, {
     headers: {
       Accept: "application/vnd.github+json",
       "User-Agent": "hydra-evidence-page",
+      "Cache-Control": "no-cache",
     },
     cache: "no-store",
   });
@@ -39,10 +48,11 @@ async function fetchTotalCommits(): Promise<number | null> {
 }
 
 async function fetchRecent(): Promise<CommitSummary[]> {
-  const r = await fetch(`${BASE}/commits?per_page=5`, {
+  const r = await fetch(`${BASE}/commits?per_page=5&_=${nonce()}`, {
     headers: {
       Accept: "application/vnd.github+json",
       "User-Agent": "hydra-evidence-page",
+      "Cache-Control": "no-cache",
     },
     cache: "no-store",
   });
@@ -78,6 +88,14 @@ export async function GET() {
     recent,
   };
   return Response.json(snap, {
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      // Belt + braces: explicit no-store for browser, Pragma for legacy
+      // proxies, Surrogate-Control to bypass Cloudflare's edge cache (which
+      // otherwise serves stale snapshots even when the origin says no-store).
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "Surrogate-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
+    },
   });
 }
