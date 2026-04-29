@@ -27,5 +27,10 @@ contracts/typechain-types/
 # Runtime artifacts (head logs, AXL logs, 0G KV mirror, events.jsonl)
 logs/
 
+# Postmortem journal captures are curated incident evidence, not runtime
+# logs — keep them out of the *.log catch-all above.
+!docs/postmortems/
+!docs/postmortems/*.log
+
 # Local AI agent context (not for the public repo)
 CLAUDE.md

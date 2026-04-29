@@ -1,0 +1,5 @@
+Apr 29 06:41:14 localhost systemd[1]: Stopping hydra-head1.service - HYDRA head 1 (aave_deposit)...
+Apr 29 06:41:14 localhost systemd[1]: hydra-head1.service: Deactivated successfully.
+Apr 29 06:41:14 localhost systemd[1]: Stopped hydra-head1.service - HYDRA head 1 (aave_deposit).
+Apr 29 06:41:14 localhost systemd[1]: hydra-head1.service: Consumed 27min 56.655s CPU time, 467.8M memory peak, 0B memory swap peak.
+Apr 29 06:41:14 localhost systemd[1]: Started hydra-head1.service - HYDRA head 1 (aave_deposit).

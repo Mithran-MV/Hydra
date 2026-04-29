@@ -1,0 +1,5 @@
+Apr 29 06:41:14 localhost systemd[1]: Stopping hydra-axl@2.service - HYDRA AXL node h2...
+Apr 29 06:41:14 localhost systemd[1]: hydra-axl@2.service: Deactivated successfully.
+Apr 29 06:41:14 localhost systemd[1]: Stopped hydra-axl@2.service - HYDRA AXL node h2.
+Apr 29 06:41:14 localhost systemd[1]: hydra-axl@2.service: Consumed 10min 49.539s CPU time, 11.0M memory peak, 0B memory swap peak.
+Apr 29 06:41:14 localhost systemd[1]: Started hydra-axl@2.service - HYDRA AXL node h2.

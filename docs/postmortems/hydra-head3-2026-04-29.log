@@ -1,0 +1,30 @@
+Apr 28 18:08:13 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 18:08:18 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 18:08:18 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 18:08:18 localhost systemd[1]: hydra-head3.service: Consumed 33.314s CPU time, 167.8M memory peak, 0B memory swap peak.
+Apr 28 18:08:18 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 18:14:17 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 18:14:17 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 18:14:17 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 18:14:17 localhost systemd[1]: hydra-head3.service: Consumed 4.662s CPU time.
+Apr 28 18:14:17 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 21:14:23 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 21:14:29 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 21:14:29 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 21:14:29 localhost systemd[1]: hydra-head3.service: Consumed 12min 34.209s CPU time, 430.4M memory peak, 0B memory swap peak.
+Apr 28 21:14:29 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:19:52 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 23:19:52 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 23:19:52 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:19:52 localhost systemd[1]: hydra-head3.service: Consumed 16.306s CPU time.
+Apr 28 23:19:52 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:42:28 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 23:42:28 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 23:42:28 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:42:28 localhost systemd[1]: hydra-head3.service: Consumed 9.095s CPU time.
+Apr 28 23:42:28 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:47:43 localhost systemd[1]: Stopping hydra-head3.service - HYDRA head 3 (payroll)...
+Apr 28 23:47:43 localhost systemd[1]: hydra-head3.service: Deactivated successfully.
+Apr 28 23:47:43 localhost systemd[1]: Stopped hydra-head3.service - HYDRA head 3 (payroll).
+Apr 28 23:47:43 localhost systemd[1]: hydra-head3.service: Consumed 5.034s CPU time.
+Apr 29 23:37:45 localhost systemd[1]: Started hydra-head3.service - HYDRA head 3 (payroll).

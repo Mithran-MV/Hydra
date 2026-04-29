@@ -1,0 +1,16 @@
+Apr 28 23:31:26 localhost systemd[1]: Started hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 28 23:42:28 localhost systemd[1]: Stopping hydra-head2.service - HYDRA head 2 (univ4_lp)...
+Apr 28 23:42:28 localhost systemd[1]: hydra-head2.service: Deactivated successfully.
+Apr 28 23:42:28 localhost systemd[1]: Stopped hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 28 23:42:28 localhost systemd[1]: hydra-head2.service: Consumed 6.002s CPU time.
+Apr 28 23:42:28 localhost systemd[1]: Started hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 28 23:55:22 localhost systemd[1]: Stopping hydra-head2.service - HYDRA head 2 (univ4_lp)...
+Apr 28 23:55:27 localhost systemd[1]: hydra-head2.service: Deactivated successfully.
+Apr 28 23:55:27 localhost systemd[1]: Stopped hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 28 23:55:27 localhost systemd[1]: hydra-head2.service: Consumed 6.753s CPU time.
+Apr 28 23:55:27 localhost systemd[1]: Started hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 29 00:10:19 localhost systemd[1]: Stopping hydra-head2.service - HYDRA head 2 (univ4_lp)...
+Apr 29 00:10:19 localhost systemd[1]: hydra-head2.service: Deactivated successfully.
+Apr 29 00:10:19 localhost systemd[1]: Stopped hydra-head2.service - HYDRA head 2 (univ4_lp).
+Apr 29 00:10:19 localhost systemd[1]: hydra-head2.service: Consumed 5.974s CPU time.
+Apr 29 23:37:45 localhost systemd[1]: Started hydra-head2.service - HYDRA head 2 (univ4_lp).
