@@ -208,9 +208,11 @@ quorum (⌈n/2⌉+1) reaches `confirmed` with cause from latest panic → leader
 (lowest-peer-id) writes scar to 0G global stream + broadcasts → mints iNFT
 on `HydraScars` → spawns 2 children with fresh ed25519 keys → children boot,
 inherit dead head's state from 0G KV, call 0G Compute (TEE-verified) for an
-action signal → KeeperHub workflow gets a webhook with the full payload for
-external audit. End state: swarm went 3 → 4 (one dead, two born), every
-surviving + future head now carries the new defense rule.
+action signal → leader fires four KeeperHub workflows over MCP HTTP
+(death-event, treasury-redistribute, scar-mint, heartbeat-stale) — each
+execution carries the full payload for third-party-verifiable audit.
+End state: swarm went 3 → 4 (one dead, two born), every surviving +
+future head now carries the new defense rule.
 
 ## How it works
 
@@ -220,7 +222,7 @@ surviving + future head now carries the new defense rule.
 4. **Resurrection** — leader generates two fresh ed25519 keypairs, writes AXL configs, spawns two AXL Go sidecars, then spawns two Node head processes with `PARENT_ID` env var. Children boot, read parent's last state from 0G, broadcast `born`, join the mesh.
 5. **TEE-verified inference** — children call `0G Compute` once on boot via `@0glabs/0g-serving-broker`; the response is verified via `processResponse` (TeeML / TeeTLS attestation) so the swarm's "should I act?" decision is provably honest compute. **Galileo testnet caveat:** the broker requires a 3 OG ledger minimum and the testnet faucet caps at 0.1 OG / day per address, so on testnet the call typically lands as a `compute.skip` event with a typed funding-gap error rather than a TEE-attested response. The integration path fires on every child boot — the gap is faucet ergonomics, not wiring. Visible in `events.jsonl` and on `/chronicle` Section 3 once the next attack lands a child.
 6. **iNFT scar minting** — every learned defense rule mints an ERC-721 + ERC-165 + ERC-721Metadata token on `HydraScars` v2 (chain 16602). The cause string and full mitigation rule live in contract storage (`causeOf[id]`, `ruleOf[id]`); `tokenURI` returns a `data:application/json;base64,…` URI so chain explorers render the NFT card with the rule visible directly.
-7. **KeeperHub audit trail** — leader calls `mcp__keeperhub__execute_workflow` over MCP HTTP on every confirmed death + treasury redistribute + scar mint, plus heartbeat-stale watchdog hits. Four workflows live; full execution input + run history visible in the KH dashboard, deep-linked from `/chronicle` Section 3.
+7. **KeeperHub audit + orchestration overlay** — leader calls `mcp__keeperhub__execute_workflow` over MCP HTTP on every consensus-confirmed event. Four dedicated workflows wrap every chain settlement with a third-party-verifiable run record carrying the full payload (head IDs, cause, scar rule, child indices, tx context): `death-event`, `treasury-redistribute`, `scar-mint`, `heartbeat-stale`. **26 executions** captured live, each linkable from `/chronicle` Section iii. Chain settlement itself happens via viem direct calls — 0G Galileo (chain 16602) isn't currently in KeeperHub's supported chain list (filed as F-3 in [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md)). KeeperHub's Luca Malpiedi responded to that check-in feedback within ~36 hours, shipping a fix to the webhook auth bug and clarifying the `wfb_` / `kh_` key model. KeeperHub is the orchestration + audit layer above whatever chain the agent uses.
 8. **Whitelisted execution** — funds live in `HydraTreasury`, never in head EOAs. `HydraExecutor` permits only `(target, selector)` pairs explicitly whitelisted by the owner. A compromised head's key cannot drain the treasury — it can only call functions that route value back to the treasury.
 
 ---
@@ -234,7 +236,7 @@ The swarm holds these bounds across every kill in our test runs. Numbers are mea
 | Detection | < 18 s | 5 missed 3-s heartbeats over the AXL mesh trigger `suspect` broadcast |
 | Quorum + cause attribution | < 24 s | ⌈n/2⌉+1 heads agree, leader pulls cause from latest panic message |
 | Spawn + scar broadcast | < 45 s | Two children, fresh ed25519 keys, AXL configs written, joined mesh |
-| Treasury redeposit on chain | < 60 s | KeeperHub-routed call lands in `HydraTreasury`, dashboard ticks |
+| Treasury redeposit on chain | < 60 s | Agent calls `HydraTreasury` via viem direct; KeeperHub `treasury-redistribute` execution wraps the event with the full payload as a third-party audit record |
 | iNFT mint (scar metadata) | next block | `HydraScars.mintScar(...)` writes cause + rule on chain |
 
 Drain defense is independent of these timings — see "Common Questions" below.
@@ -271,7 +273,7 @@ Each `HydraScars` token's `tokenURI` returns on-chain JSON describing the cause 
 |---|---|---|
 | **Gensyn AXL** | P2P signed messaging across 3 separate Go nodes — all 7 message types active and proven on chain (heartbeat, suspect, confirmed, resurrect, born, scar, panic). **84,357 messages** logged in events.jsonl (44,922 send / 39,435 recv) across the swarm's lifetime; 26,169+ heartbeats. | `agents/src/axl/`, `configs/h*.json` |
 | **0G** | Chain — 4 contracts on Galileo 16602 (Registry, Treasury, Executor, HydraScars v2 ERC-721); **4 iNFTs** minted, one per attack. Storage — `uploadJsonToOG` lands real Indexer rootHash + txHash for every new scar (**2** verified uploads to date). Compute — SDK wired for TEE-attested child inference, Galileo-faucet-blocked → emits typed `compute.skip` per child boot. Submitting to **both** 0G tracks (Swarms+iNFT and Frameworks). | `agents/src/memory/`, `contracts/contracts/`, `agents/src/execution/chain.ts` |
-| **KeeperHub** | Workflow orchestration via MCP HTTP `execute_workflow` (org-scoped `kh_…` key, auth bypasses webhook 401 path). **26 executions** across 4 HYDRA workflows (`lcyuk85gh46defy5xaq8b` death-event · `uybkmq5v2mpvgji7933ji` treasury-redistribute · `up22dre1y0frp1pskrbuj` scar-mint · `6sdbtvyee2n0uihywyim3` heartbeat-stale), every run linkable from /chronicle Section 3. | `agents/src/execution/keeperhub.ts` |
+| **KeeperHub** | Audit + orchestration overlay above every consensus-confirmed event. 4 dedicated workflows wrap every chain settlement with a verifiable third-party run record carrying the full payload: `death-event` (`lcyuk85gh46defy5xaq8b`), `treasury-redistribute` (`uybkmq5v2mpvgji7933ji`), `scar-mint` (`up22dre1y0frp1pskrbuj`), `heartbeat-stale` (`6sdbtvyee2n0uihywyim3`). **26 executions** live. Chain settlement happens via viem direct because 0G Galileo isn't currently in KH's supported chain list (F-3 in `KEEPERHUB_FEEDBACK.md`); KH's Luca Malpiedi confirmed the design + shipped a webhook-auth fix in ~36 hours. | `agents/src/execution/keeperhub.ts` |
 
 Each sponsor is load-bearing: without AXL the anti-fragility is centralized; without 0G death means amnesia; without KeeperHub the redistribution lacks an auditable third-party trail.
 
