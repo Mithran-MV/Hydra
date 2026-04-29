@@ -114,26 +114,35 @@ Death becomes amnesia. Without Storage, children can't read the parent's last st
 
 **Prize criteria:** *"Best Use of KeeperHub" + "Builder Feedback Bounty"*.
 
-### Three workflows, three trigger types
+### Audit + orchestration overlay above every consensus-confirmed event
 
-| # | Name | Trigger | Purpose |
+KeeperHub is the orchestration + audit layer layered **above** whatever chain the agent uses. Every consensus-confirmed event in HYDRA — death, treasury redistribution, scar mint, stale-heartbeat watchdog — fires a dedicated KeeperHub workflow execution carrying the full payload (head IDs, cause, scar rule, child indices, tx context). KeeperHub's run history then becomes a third-party-verifiable record of the swarm's reaction independent of the agent's own logs.
+
+### Four workflows, four event classes
+
+| # | Workflow ID | Name | Fires on |
 |---|---|---|---|
-| 1 | HYDRA Death Webhook | Webhook | Audit trail for confirmed deaths (workflow `lcyuk85gh46defy5xaq8b`) |
-| 2 | HYDRA Heartbeat Stale | Webhook | Inter-quorum delay observability — fired when a watchdog suspects a peer |
-| 3 | HYDRA Scar Learned | Webhook | External audit on every newly-learned defense rule |
-| 4 | HYDRA Treasury Watch | Schedule + Protocol Action | Native KH protocol action (Get ETH Balance) on a 5-minute cron, breach detection in Run Code |
+| 1 | `lcyuk85gh46defy5xaq8b` | death-event | Every consensus.confirmed (one per attack) |
+| 2 | `uybkmq5v2mpvgji7933ji` | treasury-redistribute | Every dead-head balance redistribution to children |
+| 3 | `up22dre1y0frp1pskrbuj` | scar-mint | Every newly-learned scar (one per new cause) |
+| 4 | `6sdbtvyee2n0uihywyim3` | heartbeat-stale | Every watchdog-detected stale heartbeat (independent of consensus.confirmed) |
 
-Workflow #4 demonstrates KH *depth* (native protocol action, not just Run Code) — see `demo/keeperhub-setup.md` for the UI walkthrough.
+**26 executions live across these four workflows** as of D6 evening. Each row in `/chronicle` Section iii links straight to its execution detail at `app.keeperhub.com/workflows/<id>/executions/<executionId>`.
+
+### Architectural choice — why audit overlay rather than on-chain executor
+
+KeeperHub's `execute_contract_call` and `execute_transfer` protocol actions are scoped to KH's supported chain list. **0G Galileo (chain 16602) isn't on that list yet** (filed as F-3 in [`KEEPERHUB_FEEDBACK.md`](./KEEPERHUB_FEEDBACK.md)), so the agent makes on-chain writes to 0G via viem directly and uses KeeperHub for the audit + orchestration layer above. This is a deliberate design pattern, not a workaround: KeeperHub's Luca Malpiedi confirmed the layering during his response to our check-in feedback (the same response that shipped the webhook auth fix and clarified the `wfb_` / `kh_` key model in ~36 hours).
+
+The chain-support gap is therefore presented as a feature-request opportunity rather than a blocker. When 0G Galileo lands in KeeperHub's chain list, swapping the agent's viem-direct writes to a KH `execute_contract_call` is a one-day refactor — the workflow scaffolding is already in place.
 
 ### Code paths
 
 | Function | What it does | When |
 |---|---|---|
-| `notifyRedistribute(payload, headId)` | POSTs the death payload to workflow 1's webhook URL | After resurrection completes |
-| `notifyHeartbeatStale(payload, headId)` | POSTs to workflow 2's webhook URL | When `consensus.handleSuspect` first marks a peer suspect |
-| `notifyScarLearned(payload, headId)` | POSTs to workflow 3's webhook URL | Inside `onLeadershipResurrection` after `persistGlobalScar` |
+| `executeWorkflow(workflowId, input, label)` | Initialises an MCP HTTP session and triggers the named workflow with the payload as input | Every consensus event the agent fires |
+| `appendKhRun(record)` | Writes one JSON-Lines record per execution to `logs/keeperhub-runs.jsonl` (timestamp, workflowId, executionId, status, inputSummary) | Inside `executeWorkflow` after every dispatch |
 
-All three POSTs include a Bearer-style API key (`KEEPERHUB_KEY`) and degrade gracefully on 401 (see KEEPERHUB_FEEDBACK.md, finding F-1 — webhook auth gap is documented as builder feedback).
+All calls use the org-scoped `kh_` key over the MCP HTTP transport — the public webhook endpoint expects a different key type (`wfb_` user keys per Luca's update). See `KEEPERHUB_FEEDBACK.md` for the full builder-feedback writeup.
 
 ### Builder feedback bounty (`KEEPERHUB_FEEDBACK.md`)
 
@@ -146,7 +155,7 @@ Four reproducible findings logged during integration:
 
 ### What breaks without KeeperHub
 
-The redistribution lacks an external audit trail. The agent could still emit events to its own log, but a reviewer has no way to verify "this swarm reacted to these deaths" without trusting the agent's own self-reporting. KeeperHub provides the third-party run history — it's the *audit* layer, not the execution layer (chain handles execution). Removing it leaves the system functioning but unverifiable.
+Every consensus-confirmed event lacks an external audit trail. The agent could still emit `events.jsonl` lines, but a reviewer has no way to verify "this swarm actually reacted to those deaths in this order" without trusting the agent's own self-reporting. KeeperHub provides the third-party run history — orchestration + audit above the chain layer, not in place of it. Removing KeeperHub leaves the system functioning but unverifiable.
 
 ---
 
