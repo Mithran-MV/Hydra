@@ -194,7 +194,12 @@ export async function GET() {
       "Content-Type": "text/event-stream",
       // no-store so any intermediary or browser back/forward cache always
       // reconnects to the live stream rather than replaying a stale snapshot.
-      "Cache-Control": "no-store, no-transform",
+      // Surrogate-Control + CDN-Cache-Control match the JSON feed routes
+      // (c28240b) so Cloudflare doesn't try to buffer the SSE chunks.
+      "Cache-Control": "no-store, no-transform, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "Surrogate-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     },

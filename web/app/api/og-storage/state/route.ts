@@ -72,6 +72,13 @@ export async function GET(req: Request) {
   };
 
   return Response.json(snapshot, {
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      // Bypass any edge/CDN cache between origin and the chronicle page.
+      // Same pattern as keeperhub-runs + github-commits (c28240b).
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "Surrogate-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
+    },
   });
 }

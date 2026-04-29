@@ -115,6 +115,15 @@ export async function GET(req: Request) {
   };
 
   return Response.json(snap, {
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      // Bypass any edge/CDN cache between origin and the chronicle page.
+      // Same pattern as keeperhub-runs + github-commits (c28240b) — without
+      // Surrogate-Control + CDN-Cache-Control, Cloudflare can serve stale
+      // snapshots back to /chronicle even when the origin says no-store.
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "Surrogate-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
+    },
   });
 }
