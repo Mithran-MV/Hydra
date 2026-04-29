@@ -428,10 +428,15 @@ function KeeperHubCard() {
                 </thead>
                 <tbody>
                   {snap.runs.map((r, i) => {
-                    const execHref =
-                      r.executionId
-                        ? `https://app.keeperhub.com/workflows/${r.workflowId}/executions/${r.executionId}`
-                        : null;
+                    // KH's per-execution detail page (`/workflows/{wf}/executions/{ex}`)
+                    // is not a stable public URL — it 404s for mid-running runs and
+                    // sometimes for completed ones. The workflow detail page is
+                    // guaranteed to render, with the run listed in its Runs tab. We
+                    // surface the executionId as link text so judges can cross-check
+                    // by id once they're on the workflow page.
+                    const execHref = r.executionId
+                      ? `https://app.keeperhub.com/workflows/${r.workflowId}`
+                      : null;
                     return (
                       <tr
                         key={`${r.ts}-${i}`}
@@ -480,9 +485,11 @@ function KeeperHubCard() {
           )}
           <p className="mt-3 text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono leading-relaxed">
             agent-side log of every KH execution wrapping a chain settlement
-            (logs/keeperhub-runs.jsonl). Cross-verify by clicking an execution
-            id; KH dashboard is per-org permissioned. Chain settlement itself
-            is via viem direct (F-3 in KEEPERHUB_FEEDBACK.md).
+            (logs/keeperhub-runs.jsonl). Click a row to land on the KH
+            workflow page; the execution id (visible in this row) is listed in
+            that workflow&apos;s Runs tab. KH dashboard is per-org permissioned.
+            Chain settlement itself is via viem direct (F-3 in
+            KEEPERHUB_FEEDBACK.md).
           </p>
         </div>
       ) : error ? (
