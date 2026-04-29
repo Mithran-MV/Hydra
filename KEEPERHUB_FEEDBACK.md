@@ -28,7 +28,7 @@ original report remains intact.
 
 ## Follow-up — 2026-04-29
 
-Luca Malpiedi at KeeperHub responded again confirming that 0G chain support is being pushed into KeeperHub's production environment, with shipping expected by 2026-04-30. Quote (with permission): "we are actually looking to push 0G support into production by tomorrow." This turns F-3 below from a filed feature gap into an in-flight shipped capability — the fastest builder-feedback loop we observed during the hackathon. We'll update this file again once the release lands and confirm whether HYDRA can migrate the agent's viem-direct chain settlements to KH's execute_contract_call once 0G is on the supported chain list.
+Continuing engagement with the KeeperHub team: in a follow-up exchange today, KH confirmed they are shipping 0G chain support to their production environment, with expected release in the next 24 hours. This turns F-3 below — our filed observation that 0G isn't currently in KH's supported chain list — from a feature gap into an in-flight shipped capability, the fastest builder-feedback loop we observed during the hackathon. Once 0G is on KH's supported chain list, HYDRA's agent can migrate its viem-direct chain writes to use KH's execute_contract_call action, closing the architectural separation described above.
 
 ---
 
