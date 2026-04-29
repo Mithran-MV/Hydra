@@ -385,9 +385,16 @@ function KeeperHubCard() {
   return (
     <EvidenceCard
       label="Codex iii · Audit"
-      title="KeeperHub workflow runs"
+      title="KeeperHub Audit Overlay"
       source={{ href: "https://app.keeperhub.com/workflows", text: "app.keeperhub.com" }}
     >
+      <p className="text-[0.7rem] leading-relaxed text-neutral-400 mb-3">
+        Every consensus-confirmed death, scar mint, treasury redistribution,
+        and stale-heartbeat watchdog hit is wrapped in a KeeperHub workflow
+        run, producing a third-party-verifiable audit record with full
+        payload visibility. KeeperHub is the orchestration + audit layer
+        above the agent&apos;s direct viem-based chain writes.
+      </p>
       {snap ? (
         <div>
           <div className="flex items-center justify-between text-xs text-neutral-400 mb-3 flex-wrap gap-2">
@@ -472,9 +479,10 @@ function KeeperHubCard() {
             </div>
           )}
           <p className="mt-3 text-[0.65rem] tracking-[0.2em] uppercase text-neutral-500 font-mono leading-relaxed">
-            agent-side log of every KH call HYDRA has made via MCP HTTP
+            agent-side log of every KH execution wrapping a chain settlement
             (logs/keeperhub-runs.jsonl). Cross-verify by clicking an execution
-            id; the KH dashboard is per-org permissioned.
+            id; KH dashboard is per-org permissioned. Chain settlement itself
+            is via viem direct (F-3 in KEEPERHUB_FEEDBACK.md).
           </p>
         </div>
       ) : error ? (
