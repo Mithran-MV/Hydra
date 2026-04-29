@@ -361,6 +361,10 @@ html.lenis body {
     0 18px 50px -15px rgba(55, 255, 158, 0.7),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   cursor: pointer;
+  /* Clip the ::before shimmer to the button's bounds so the
+   * idle-state translateX(-100%) doesn't overflow onto the sibling
+   * button to the left. */
+  overflow: hidden;
 }
 .mythic-btn::before {
   content: "";
@@ -375,6 +379,9 @@ html.lenis body {
   mix-blend-mode: overlay;
   transform: translateX(-100%);
   transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Visual-only overlay — never capture clicks, even when
+   * positioned off-button by the translateX(-100%) idle state. */
+  pointer-events: none;
 }
 .mythic-btn:hover {
   transform: translateY(-2px);
